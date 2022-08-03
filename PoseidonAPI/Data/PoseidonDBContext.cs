@@ -10,6 +10,10 @@ namespace PoseidonAPI.Data
         public PoseidonDBContext(DbContextOptions<PoseidonDBContext> options) : base(options) { }
 
         public virtual DbSet<Bid> Bids { get; set; }
+        public virtual DbSet<CurvePoint> CurvePoints { get; set; }
+        public virtual DbSet<Rating> Ratings { get; set; }
+        public virtual DbSet<Rule> Rules { get; set; }
+        public virtual DbSet<Trade> Trades { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -19,6 +23,26 @@ namespace PoseidonAPI.Data
             modelBuilder.Entity<Bid>(entity =>
             {
                 entity.HasKey(b => b.BidId);
+            });
+
+            modelBuilder.Entity<CurvePoint>(entity =>
+            {
+                entity.HasKey(c => c.CurvePointId);
+            });
+
+            modelBuilder.Entity<Rating>(entity =>
+            {
+                entity.HasKey(r => r.RatingId);
+            });
+
+            modelBuilder.Entity<Rule>(entity =>
+            {
+                entity.HasKey(r => r.RuleId);
+            });
+
+            modelBuilder.Entity<Trade>(entity =>
+            {
+                entity.HasKey(t => t.TradeId);
             });
         }
     }

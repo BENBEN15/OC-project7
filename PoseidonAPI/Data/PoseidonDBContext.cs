@@ -7,6 +7,7 @@ namespace PoseidonAPI.Data
 {
     public class PoseidonDBContext : IdentityDbContext<IdentityUser>
     {
+        public PoseidonDBContext() { }
         public PoseidonDBContext(DbContextOptions<PoseidonDBContext> options) : base(options) { }
 
         public virtual DbSet<Bid> Bids { get; set; }

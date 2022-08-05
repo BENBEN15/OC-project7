@@ -1,0 +1,11 @@
+global using Xunit;
+global using Microsoft.EntityFrameworkCore;
+global using Microsoft.EntityFrameworkCore.Storage;
+global using Microsoft.EntityFrameworkCore.InMemory;
+global using PoseidonAPI.Services;
+global using PoseidonAPI.Repositories;
+global using PoseidonAPI.Dtos;
+global using PoseidonAPI.Model;
+global using PoseidonAPI.Data;
+global using Moq;
+global using Moq.EntityFrameworkCore;

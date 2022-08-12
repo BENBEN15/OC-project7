@@ -37,10 +37,11 @@ namespace PoseidonAPI.Services
             return dtos;
         }
 
-        public void Save(RatingDTO dto)
+        public RatingDTO Save(RatingDTO dto)
         {
             Rating rating = _mapper.Map<Rating>(dto);
-            _ratingRepository.Save(rating);
+            RatingDTO ratingDto = _mapper.Map<RatingDTO>(_ratingRepository.Save(rating));
+            return ratingDto;
         }
 
         public void Update(RatingDTO dto)

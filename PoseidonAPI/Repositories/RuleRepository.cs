@@ -25,10 +25,11 @@ namespace PoseidonAPI.Repositories
             return rules;
         }
 
-        public void Save(Rule rule)
+        public Rule Save(Rule rule)
         {
             _dbContext.Add(rule);
             _dbContext.SaveChanges();
+            return rule;
         }
 
         public void Update(Rule rule)

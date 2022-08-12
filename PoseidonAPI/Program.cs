@@ -9,56 +9,61 @@ using PoseidonAPI.Dtos;
 using AutoMapper;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-
-///Repositories
-builder.Services.AddScoped<IRepository<Bid>, BidRepository>();
-builder.Services.AddScoped<IService<BidDTO>, BidService>();
-
-builder.Services.AddScoped<IRepository<CurvePoint>, CurvePointRepository>();
-builder.Services.AddScoped<IService<CurvePointDTO>, CurvePointService>();
-
-builder.Services.AddScoped<IRepository<Rating>, RatingRepository>();
-builder.Services.AddScoped<IService<RatingDTO>, RatingService>();
-
-builder.Services.AddScoped<IRepository<Rule>, RuleRepository>();
-builder.Services.AddScoped<IService<RuleDTO>, RuleService>();
-
-builder.Services.AddScoped<IRepository<Trade>, TradeRepository>();
-builder.Services.AddScoped<IService<TradeDTO>, TradeService>();
-
-///Dbcontext
-builder.Services.AddDbContext<PoseidonDBContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-///Identity
-builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<PoseidonDBContext>();
-///Authorization
-builder.Services.AddAuthorization();
-
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-//builder.Services.AddSwaggerGen();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
 {
-    //app.UseSwagger();
-    //app.UseSwaggerUI();
+    // Add services to the container.
+    ///CORS
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("CorsPolicy",
+                builder => builder
+                    .AllowAnyOrigin()
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+            );
+    });
+
+    ///Automapper
+    builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+    ///Repositories
+    builder.Services.AddScoped<IRepository<Bid>, BidRepository>();
+    builder.Services.AddScoped<IService<BidDTO>, BidService>();
+
+    builder.Services.AddScoped<IRepository<CurvePoint>, CurvePointRepository>();
+    builder.Services.AddScoped<IService<CurvePointDTO>, CurvePointService>();
+
+    builder.Services.AddScoped<IRepository<Rating>, RatingRepository>();
+    builder.Services.AddScoped<IService<RatingDTO>, RatingService>();
+
+    builder.Services.AddScoped<IRepository<Rule>, RuleRepository>();
+    builder.Services.AddScoped<IService<RuleDTO>, RuleService>();
+
+    builder.Services.AddScoped<IRepository<Trade>, TradeRepository>();
+    builder.Services.AddScoped<IService<TradeDTO>, TradeService>();
+
+    ///Dbcontext
+    builder.Services.AddDbContext<PoseidonDBContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    ///Identity
+    builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<PoseidonDBContext>();
+    ///Authorization
+    builder.Services.AddAuthorization();
+
+    builder.Services.AddControllers();
+    builder.Services.AddEndpointsApiExplorer();
 }
 
-app.UseHttpsRedirection();
 
-app.UseRouting();
 
-app.UseAuthentication();
-app.UseAuthorization();
+var app = builder.Build();
+{
+    app.UseExceptionHandler("/error");
+    app.UseHttpsRedirection();
+    app.UseRouting();
+    app.UseCors("CorsPolicy");
+    app.UseAuthentication();
+    app.UseAuthorization();
+    app.UseEndpoints(endpoints => endpoints.MapControllers());
+    app.Run();
+}
 
-app.UseEndpoints(endpoints => endpoints.MapControllers());
-//app.MapControllers();
 
-app.Run();

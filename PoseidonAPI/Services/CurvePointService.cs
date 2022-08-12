@@ -37,10 +37,11 @@ namespace PoseidonAPI.Services
             return dtos;
         }
 
-        public void Save(CurvePointDTO dto)
+        public CurvePointDTO Save(CurvePointDTO dto)
         {
             CurvePoint cp = _mapper.Map<CurvePoint>(dto);
-            _cpRepository.Save(cp);
+            CurvePointDTO cpDto = _mapper.Map<CurvePointDTO>(_cpRepository.Save(cp));
+            return cpDto;
         }
 
         public void Update(CurvePointDTO dto)

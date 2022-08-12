@@ -25,10 +25,11 @@ namespace PoseidonAPI.Repositories
             return curvePoints;
         }
 
-        public void Save(CurvePoint curvePoint)
+        public CurvePoint Save(CurvePoint curvePoint)
         {
             _dbContext.Add(curvePoint);
             _dbContext.SaveChanges();
+            return curvePoint;
         }
 
         public void Update(CurvePoint curvePoint)

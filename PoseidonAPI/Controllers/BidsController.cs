@@ -1,21 +1,26 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using PoseidonAPI.Contracts.Bid;
 using PoseidonAPI.Services;
 using PoseidonAPI.Dtos;
 using PoseidonAPI.Validators;
 using FluentValidation.Results;
+using AutoMapper;
 
 namespace PoseidonAPI.Controllers
 {
-    [Route("api/v1/[controller]")]
+    //old route api/v1/[controller]
+    [Route("api/bids")]
     [ApiController]
     public class BidsController : ControllerBase
     {
         private readonly IService<BidDTO> _bidService;
+        private readonly IMapper _mapper;
 
-        public BidsController(IService<BidDTO> bidService)
+        public BidsController(IService<BidDTO> bidService, IMapper mapper)
         {
             _bidService = bidService;
+            _mapper = mapper;
         }
 
 
@@ -25,22 +30,28 @@ namespace PoseidonAPI.Controllers
             try
             {
                 var result = _bidService.GetAll();
-                return Ok(result);
+                List<BidResponse> response = new List<BidResponse>();
+                foreach (var item in result)
+                {
+                    response.Add(_mapper.Map<BidResponse>(item));
+                }
+                return Ok(response);
             }
             catch
             {
                 return NotFound();
             }
-            
+
         }
 
-        [HttpGet, Route("/{id}")]
+        [HttpGet, Route("{id}")]
         public IActionResult Get(int id)
         {
             try
             {
                 var result = _bidService.Get(id);
-                return Ok(result);
+                BidResponse response = _mapper.Map<BidResponse>(result);
+                return Ok(response);
             }
             catch
             {
@@ -48,16 +59,21 @@ namespace PoseidonAPI.Controllers
             }
         }
 
-        [HttpPost, Route("/")]
-        public IActionResult Add(BidDTO bid)
+        [HttpPost]
+        public IActionResult Add(CreateBidRequest request)
         {
-            BidDTOValidator validator = new BidDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(bid);
+            var bidDTO = _mapper.Map<BidDTO>(request);
 
+            BidDTOValidator validator = new BidDTOValidator();
+            ValidationResult ValidatorResult = validator.Validate(bidDTO);
             if (ValidatorResult.IsValid)
             {
-                _bidService.Save(bid);
-                return Ok();
+                BidResponse response = _mapper.Map<BidResponse>(_bidService.Save(bidDTO));
+
+                return CreatedAtAction(
+                    nameof(Get),
+                    new { id = response.BidId },
+                    response);
             }
             else
             {
@@ -72,16 +88,18 @@ namespace PoseidonAPI.Controllers
             }
         }
 
-        [HttpPut, Route("/")]
-        public IActionResult Update(BidDTO bid)
+        [HttpPut, Route("{id}")]
+        public IActionResult Update(int id, UpsertBidRequest bid)
         {
+            BidDTO bidDTO = _mapper.Map<BidDTO>(bid);
+
             BidDTOValidator validator = new BidDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(bid);
+            ValidationResult ValidatorResult = validator.Validate(bidDTO);
 
             if (ValidatorResult.IsValid)
             {
-                _bidService.Update(bid);
-                return Ok();
+                _bidService.Update(bidDTO);
+                return NoContent();
             }
             else
             {
@@ -96,13 +114,13 @@ namespace PoseidonAPI.Controllers
             }
         }
 
-        [HttpDelete, Route("/{id}")]
+        [HttpDelete]
         public IActionResult Delete(int id)
         {
             try
             {
                 _bidService.Delete(id);
-                return Ok();
+                return NoContent();
             }
             catch
             {

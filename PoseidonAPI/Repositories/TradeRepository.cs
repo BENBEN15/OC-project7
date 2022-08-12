@@ -25,10 +25,11 @@ namespace PoseidonAPI.Repositories
             return trades;
         }
 
-        public void Save(Trade trade)
+        public Trade Save(Trade trade)
         {
             _dbContext.Add(trade);
             _dbContext.SaveChanges();
+            return trade;
         }
 
         public void Update(Trade trade)

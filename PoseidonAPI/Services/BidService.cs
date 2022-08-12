@@ -37,10 +37,11 @@ namespace PoseidonAPI.Services
             return dtos;
         }
 
-        public void Save(BidDTO dto)
+        public BidDTO Save(BidDTO dto)
         {
             Bid bid = _mapper.Map<Bid>(dto);
-            _bidsRepository.Save(bid);
+            BidDTO bidDTO = _mapper.Map<BidDTO>(_bidsRepository.Save(bid));
+            return bidDTO;
         }
 
         public void Update(BidDTO dto)

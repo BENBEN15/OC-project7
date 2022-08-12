@@ -5,7 +5,7 @@ using PoseidonAPI.Model;
 
 namespace PoseidonAPI.Controllers
 {
-    [Route("api/v1/[controller]")]
+    [Route("api/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
     {

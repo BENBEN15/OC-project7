@@ -6,7 +6,7 @@ namespace PoseidonAPI.Services
     {
         T Get(int id);
         IEnumerable<T> GetAll();
-        void Save(T entity);
+        T Save(T entity);
         void Update(T entityUpdate);
         void Delete(int id);
     }

@@ -10,7 +10,7 @@ namespace PoseidonAPI.Dtos
         public string Type { get; set; }
         public double? BidQuantity { get; set; }
         public double? AskQuantity { get; set; }
-        public double? Bid { get; set; }
+        public double? BidValue { get; set; }
         public double? Ask { get; set; }
         public string Benchmark { get; set; }
         public DateTime? BidDate { get; set; }

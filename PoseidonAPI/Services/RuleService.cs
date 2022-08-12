@@ -37,10 +37,11 @@ namespace PoseidonAPI.Services
             return dtos;
         }
 
-        public void Save(RuleDTO dto)
+        public RuleDTO Save(RuleDTO dto)
         {
             Rule rules = _mapper.Map<Rule>(dto);
-            _rulesRepository.Save(rules);
+            RuleDTO ruleDTO = _mapper.Map<RuleDTO>(_rulesRepository.Save(rules));
+            return ruleDTO;
         }
 
         public void Update(RuleDTO dto)

@@ -37,10 +37,11 @@ namespace PoseidonAPI.Services
             return dtos;
         }
 
-        public void Save(TradeDTO dto)
+        public TradeDTO Save(TradeDTO dto)
         {
             Trade trade = _mapper.Map<Trade>(dto);
-            _tradesRepository.Save(trade);
+            TradeDTO tradeDTO = _mapper.Map<TradeDTO>(_tradesRepository.Save(trade));
+            return tradeDTO;
         }
 
         public void Update(TradeDTO dto)

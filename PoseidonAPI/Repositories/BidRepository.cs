@@ -25,10 +25,11 @@ namespace PoseidonAPI.Repositories
             return bids;
         }
 
-        public void Save(Bid bid)
+        public Bid Save(Bid bid)
         {
             _dbContext.Add(bid);
             _dbContext.SaveChanges();
+            return bid;
         }
 
         public void Update(Bid bidsUpdate)

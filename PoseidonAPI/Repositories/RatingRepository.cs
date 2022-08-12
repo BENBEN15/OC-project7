@@ -25,10 +25,11 @@ namespace PoseidonAPI.Repositories
             return ratings;
         }
 
-        public void Save(Rating rating)
+        public Rating Save(Rating rating)
         {
             _dbContext.Add(rating);
             _dbContext.SaveChanges();
+            return rating;
         }
 
         public void Update(Rating rating)

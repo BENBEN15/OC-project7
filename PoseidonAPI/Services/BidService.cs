@@ -41,6 +41,7 @@ namespace PoseidonAPI.Services
         {
             Bid bid = _mapper.Map<Bid>(dto);
             BidDTO bidDTO = _mapper.Map<BidDTO>(_bidsRepository.Save(bid));
+            //bidDTO.BidId = bid.BidId;
             return bidDTO;
         }
 

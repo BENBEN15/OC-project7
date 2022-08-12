@@ -42,6 +42,7 @@ namespace PoseidonAPI.Repositories
         {
             Bid bid = _dbContext.Bids.FirstOrDefault(x => x.BidId == id);
             _dbContext.Remove(bid);
+            _dbContext.SaveChanges();
         }
     }
 }

@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using PoseidonAPI.Contracts.User;
 using PoseidonAPI.Model;
 
 namespace PoseidonAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/users")]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -18,21 +19,25 @@ namespace PoseidonAPI.Controllers
             _signInManager = signInManager;
         }
 
-        [HttpGet, Route("Create")]
-        public async Task<IActionResult> Create(string login, string password)
+        [HttpPost]
+        public async Task<IActionResult> Create(CreateUserRequest request)
         {
-            var model = new IdentityUser { UserName = login };
-            var result = await _userManager.CreateAsync(model, password);
+            var model = new IdentityUser { 
+                UserName = request.Username, 
+                PhoneNumber = request.Phonenumber, 
+                Email = request.Email  
+            };
+            var result = await _userManager.CreateAsync(model, request.Password);
             return Ok(result);
         }
 
-        [HttpGet, Route("Login")]
-        public async Task<IActionResult> Login(string login, string password)
+        [HttpPost, Route("login")]
+        public async Task<IActionResult> Login(LoginUserRequest request)
         {
-            var model = await _userManager.FindByNameAsync(login);
+            var model = await _userManager.FindByNameAsync(request.login);
             if(model != null)
             {
-                var result = await _signInManager.PasswordSignInAsync(model, password, false, false);
+                var result = await _signInManager.PasswordSignInAsync(model, request.Password, false, false);
                 return Ok(result);
             }
             return NotFound();
@@ -42,11 +47,11 @@ namespace PoseidonAPI.Controllers
         public async Task<IActionResult> logout()
         {
             if(_signInManager.IsSignedIn(User)) await _signInManager.SignOutAsync();
-            return Ok();
+            return NoContent();
         }
 
         [Authorize]
-        [HttpGet, Route("GetMe")]
+        [HttpGet, Route("current")]
         public async Task<IActionResult> GetMe()
         {
             return Ok(await _userManager.GetUserAsync(User));

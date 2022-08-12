@@ -6,6 +6,7 @@ using PoseidonAPI.Dtos;
 using PoseidonAPI.Validators;
 using FluentValidation.Results;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 
 namespace PoseidonAPI.Controllers
 {
@@ -23,7 +24,7 @@ namespace PoseidonAPI.Controllers
             _mapper = mapper;
         }
 
-
+        [Authorize]
         [HttpGet]
         public IActionResult GetAll()
         {
@@ -44,6 +45,7 @@ namespace PoseidonAPI.Controllers
 
         }
 
+        [Authorize]
         [HttpGet, Route("{id}")]
         public IActionResult Get(int id)
         {
@@ -59,6 +61,7 @@ namespace PoseidonAPI.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost]
         public IActionResult Add(CreateBidRequest request)
         {
@@ -88,10 +91,12 @@ namespace PoseidonAPI.Controllers
             }
         }
 
+        [Authorize]
         [HttpPut, Route("{id}")]
         public IActionResult Update(int id, UpsertBidRequest bid)
         {
             BidDTO bidDTO = _mapper.Map<BidDTO>(bid);
+            bidDTO.BidId = id;
 
             BidDTOValidator validator = new BidDTOValidator();
             ValidationResult ValidatorResult = validator.Validate(bidDTO);
@@ -114,7 +119,8 @@ namespace PoseidonAPI.Controllers
             }
         }
 
-        [HttpDelete]
+        [Authorize]
+        [HttpDelete, Route("{id}")]
         public IActionResult Delete(int id)
         {
             try

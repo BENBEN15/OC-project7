@@ -42,6 +42,7 @@ namespace PoseidonAPI.Repositories
         {
             Rating rating = _dbContext.Ratings.FirstOrDefault(x => x.RatingId == id);
             _dbContext.Remove(rating);
+            _dbContext.SaveChanges();
         }
     }
 }

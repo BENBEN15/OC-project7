@@ -7,7 +7,8 @@ namespace PoseidonAPI.Validators
     {
         public BidDTOValidator()
         {
-            //RuleFor().NotEqual(0);
+            RuleFor(bid => bid.Account).NotNull();
+            RuleFor(bid => bid.Type).NotNull();
         }
     }
 }

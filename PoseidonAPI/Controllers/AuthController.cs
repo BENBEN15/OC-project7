@@ -56,5 +56,13 @@ namespace PoseidonAPI.Controllers
         {
             return Ok(await _userManager.GetUserAsync(User));
         }
+
+        [Authorize]
+        [HttpGet, Route("current")]
+        public async Task<IActionResult> UserResetPassword()
+        {
+            var user = await _userManager.
+            return Ok(await _userManager.GetUserAsync(User));
+        }
     }
 }

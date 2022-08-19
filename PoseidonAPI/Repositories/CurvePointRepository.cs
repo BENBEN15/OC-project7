@@ -42,6 +42,7 @@ namespace PoseidonAPI.Repositories
         {
             CurvePoint curvePoint = _dbContext.CurvePoints.FirstOrDefault(x => x.CurvePointId == id);
             _dbContext.Remove(curvePoint);
+            _dbContext.SaveChanges();
         }
     }
 }

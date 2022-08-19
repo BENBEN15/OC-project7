@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PoseidonAPI.Contracts.Bid;
+using PoseidonAPI.Contracts.Rating;
 using PoseidonAPI.Contracts.Error;
 using PoseidonAPI.Services;
 using PoseidonAPI.Dtos;
@@ -10,16 +10,16 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace PoseidonAPI.Controllers
 {
-    [Route("api/bids")]
+    [Route("api/ratings")]
     [ApiController]
-    public class BidsController : ControllerBase
+    public class RatingController : ControllerBase
     {
-        private readonly IService<BidDTO> _bidService;
+        private readonly IService<RatingDTO> _ratingService;
         private readonly IMapper _mapper;
 
-        public BidsController(IService<BidDTO> bidService, IMapper mapper)
+        public RatingController(IService<RatingDTO> ratingService, IMapper mapper)
         {
-            _bidService = bidService;
+            _ratingService = ratingService;
             _mapper = mapper;
         }
 
@@ -27,16 +27,17 @@ namespace PoseidonAPI.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            var result = _bidService.GetAll();
-            if(result.Count() > 0)
+            var result = _ratingService.GetAll();
+            if (result.Count() > 0)
             {
-                List<BidResponse> response = new List<BidResponse>();
+                List<RatingResponse> response = new List<RatingResponse>();
                 foreach (var item in result)
                 {
-                    response.Add(_mapper.Map<BidResponse>(item));
+                    response.Add(_mapper.Map<RatingResponse>(item));
                 }
                 return Ok(response);
-            } else
+            }
+            else
             {
                 return NotFound();
             }
@@ -46,12 +47,13 @@ namespace PoseidonAPI.Controllers
         [HttpGet, Route("{id}")]
         public IActionResult Get(int id)
         {
-            var result = _bidService.Get(id);
-            if(result != null)
+            var result = _ratingService.Get(id);
+            if (result != null)
             {
-                BidResponse response = _mapper.Map<BidResponse>(result);
+                RatingResponse response = _mapper.Map<RatingResponse>(result);
                 return Ok(response);
-            } else
+            }
+            else
             {
                 return NotFound(id);
             }
@@ -59,19 +61,19 @@ namespace PoseidonAPI.Controllers
 
         [Authorize]
         [HttpPost]
-        public IActionResult Add(CreateBidRequest request)
+        public IActionResult Add(CreateRatingRequest request)
         {
-            var bidDTO = _mapper.Map<BidDTO>(request);
+            var ratingDTO = _mapper.Map<RatingDTO>(request);
 
-            BidDTOValidator validator = new BidDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(bidDTO);
+            RatingDTOValidator validator = new RatingDTOValidator();
+            ValidationResult ValidatorResult = validator.Validate(ratingDTO);
             if (ValidatorResult.IsValid)
             {
-                BidResponse response = _mapper.Map<BidResponse>(_bidService.Save(bidDTO));
+                RatingResponse response = _mapper.Map<RatingResponse>(_ratingService.Save(ratingDTO));
 
                 return CreatedAtAction(
                     nameof(Get),
-                    new { id = response.BidId },
+                    new { id = response.RatingId },
                     response);
             }
             else
@@ -85,7 +87,7 @@ namespace PoseidonAPI.Controllers
                         errorField = failure.PropertyName,
                         errorMessage = failure.ErrorMessage,
                     };
-                    
+
                     errors.Add(error);
                 }
 
@@ -95,17 +97,17 @@ namespace PoseidonAPI.Controllers
 
         [Authorize]
         [HttpPut, Route("{id}")]
-        public IActionResult Update(int id, UpsertBidRequest bid)
+        public IActionResult Update(int id, UpsertRatingRequest rating)
         {
-            BidDTO bidDTO = _mapper.Map<BidDTO>(bid);
-            bidDTO.BidId = id;
+            RatingDTO ratingDTO = _mapper.Map<RatingDTO>(rating);
+            ratingDTO.RatingId = id;
 
-            BidDTOValidator validator = new BidDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(bidDTO);
+            RatingDTOValidator validator = new RatingDTOValidator();
+            ValidationResult ValidatorResult = validator.Validate(ratingDTO);
 
             if (ValidatorResult.IsValid)
             {
-                _bidService.Update(bidDTO);
+                _ratingService.Update(ratingDTO);
                 return Ok();
             }
             else
@@ -119,7 +121,7 @@ namespace PoseidonAPI.Controllers
                         errorField = failure.PropertyName,
                         errorMessage = failure.ErrorMessage,
                     };
-                    
+
                     errors.Add(error);
                 }
 
@@ -133,7 +135,7 @@ namespace PoseidonAPI.Controllers
         {
             try
             {
-                _bidService.Delete(id);
+                _ratingService.Delete(id);
                 return Ok();
             }
             catch

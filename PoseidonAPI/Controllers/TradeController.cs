@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PoseidonAPI.Contracts.Bid;
+using PoseidonAPI.Contracts.Trade;
 using PoseidonAPI.Contracts.Error;
 using PoseidonAPI.Services;
 using PoseidonAPI.Dtos;
@@ -10,16 +10,16 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace PoseidonAPI.Controllers
 {
-    [Route("api/bids")]
+    [Route("api/trades")]
     [ApiController]
-    public class BidsController : ControllerBase
+    public class TradeController : ControllerBase
     {
-        private readonly IService<BidDTO> _bidService;
+        private readonly IService<TradeDTO> _tradeService;
         private readonly IMapper _mapper;
 
-        public BidsController(IService<BidDTO> bidService, IMapper mapper)
+        public TradeController(IService<TradeDTO> tradeService, IMapper mapper)
         {
-            _bidService = bidService;
+            _tradeService = tradeService;
             _mapper = mapper;
         }
 
@@ -27,16 +27,17 @@ namespace PoseidonAPI.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            var result = _bidService.GetAll();
-            if(result.Count() > 0)
+            var result = _tradeService.GetAll();
+            if (result.Count() > 0)
             {
-                List<BidResponse> response = new List<BidResponse>();
+                List<TradeResponse> response = new List<TradeResponse>();
                 foreach (var item in result)
                 {
-                    response.Add(_mapper.Map<BidResponse>(item));
+                    response.Add(_mapper.Map<TradeResponse>(item));
                 }
                 return Ok(response);
-            } else
+            }
+            else
             {
                 return NotFound();
             }
@@ -46,12 +47,13 @@ namespace PoseidonAPI.Controllers
         [HttpGet, Route("{id}")]
         public IActionResult Get(int id)
         {
-            var result = _bidService.Get(id);
-            if(result != null)
+            var result = _tradeService.Get(id);
+            if (result != null)
             {
-                BidResponse response = _mapper.Map<BidResponse>(result);
+                TradeResponse response = _mapper.Map<TradeResponse>(result);
                 return Ok(response);
-            } else
+            }
+            else
             {
                 return NotFound(id);
             }
@@ -59,19 +61,19 @@ namespace PoseidonAPI.Controllers
 
         [Authorize]
         [HttpPost]
-        public IActionResult Add(CreateBidRequest request)
+        public IActionResult Add(CreateTradeRequest request)
         {
-            var bidDTO = _mapper.Map<BidDTO>(request);
+            var tradeDTO = _mapper.Map<TradeDTO>(request);
 
-            BidDTOValidator validator = new BidDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(bidDTO);
+            TradeDTOValidator validator = new TradeDTOValidator();
+            ValidationResult ValidatorResult = validator.Validate(tradeDTO);
             if (ValidatorResult.IsValid)
             {
-                BidResponse response = _mapper.Map<BidResponse>(_bidService.Save(bidDTO));
+                TradeResponse response = _mapper.Map<TradeResponse>(_tradeService.Save(tradeDTO));
 
                 return CreatedAtAction(
                     nameof(Get),
-                    new { id = response.BidId },
+                    new { id = response.TradeId },
                     response);
             }
             else
@@ -85,7 +87,7 @@ namespace PoseidonAPI.Controllers
                         errorField = failure.PropertyName,
                         errorMessage = failure.ErrorMessage,
                     };
-                    
+
                     errors.Add(error);
                 }
 
@@ -95,17 +97,17 @@ namespace PoseidonAPI.Controllers
 
         [Authorize]
         [HttpPut, Route("{id}")]
-        public IActionResult Update(int id, UpsertBidRequest bid)
+        public IActionResult Update(int id, UpsertTradeRequest trade)
         {
-            BidDTO bidDTO = _mapper.Map<BidDTO>(bid);
-            bidDTO.BidId = id;
+            TradeDTO tradeDTO = _mapper.Map<TradeDTO>(trade);
+            tradeDTO.TradeId = id;
 
-            BidDTOValidator validator = new BidDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(bidDTO);
+            TradeDTOValidator validator = new TradeDTOValidator();
+            ValidationResult ValidatorResult = validator.Validate(tradeDTO);
 
             if (ValidatorResult.IsValid)
             {
-                _bidService.Update(bidDTO);
+                _tradeService.Update(tradeDTO);
                 return Ok();
             }
             else
@@ -119,7 +121,7 @@ namespace PoseidonAPI.Controllers
                         errorField = failure.PropertyName,
                         errorMessage = failure.ErrorMessage,
                     };
-                    
+
                     errors.Add(error);
                 }
 
@@ -133,12 +135,12 @@ namespace PoseidonAPI.Controllers
         {
             try
             {
-                _bidService.Delete(id);
+                _tradeService.Delete(id);
                 return Ok();
             }
             catch
             {
-                return BadRequest();
+                return NotFound(id);
             }
         }
     }

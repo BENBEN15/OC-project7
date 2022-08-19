@@ -1,8 +1,7 @@
 ﻿namespace PoseidonAPI.Contracts.CurvePoint
 {
     public record UpsertCurvePointRequest(
-        int CurvePointId,
-        byte? CurveId,
+        int CurveId,
         DateTime? AsOfDate,
         double? Term,
         double? Value,

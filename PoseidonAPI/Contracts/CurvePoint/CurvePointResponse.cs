@@ -2,7 +2,7 @@
 {
     public record CurvePointResponse(
         int CurvePointId,
-        byte? CurveId,
+        int CurveId,
         DateTime? AsOfDate,
         double? Term,
         double? Value,

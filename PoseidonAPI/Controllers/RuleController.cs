@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PoseidonAPI.Contracts.Bid;
+using PoseidonAPI.Contracts.Rule;
 using PoseidonAPI.Contracts.Error;
 using PoseidonAPI.Services;
 using PoseidonAPI.Dtos;
@@ -10,16 +10,16 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace PoseidonAPI.Controllers
 {
-    [Route("api/bids")]
+    [Route("api/rules")]
     [ApiController]
-    public class BidsController : ControllerBase
+    public class RuleController : ControllerBase
     {
-        private readonly IService<BidDTO> _bidService;
+        private readonly IService<RuleDTO> _ruleService;
         private readonly IMapper _mapper;
 
-        public BidsController(IService<BidDTO> bidService, IMapper mapper)
+        public RuleController(IService<RuleDTO> ruleService, IMapper mapper)
         {
-            _bidService = bidService;
+            _ruleService = ruleService;
             _mapper = mapper;
         }
 
@@ -27,16 +27,17 @@ namespace PoseidonAPI.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            var result = _bidService.GetAll();
-            if(result.Count() > 0)
+            var result = _ruleService.GetAll();
+            if (result.Count() > 0)
             {
-                List<BidResponse> response = new List<BidResponse>();
+                List<RuleResponse> response = new List<RuleResponse>();
                 foreach (var item in result)
                 {
-                    response.Add(_mapper.Map<BidResponse>(item));
+                    response.Add(_mapper.Map<RuleResponse>(item));
                 }
                 return Ok(response);
-            } else
+            }
+            else
             {
                 return NotFound();
             }
@@ -46,12 +47,13 @@ namespace PoseidonAPI.Controllers
         [HttpGet, Route("{id}")]
         public IActionResult Get(int id)
         {
-            var result = _bidService.Get(id);
-            if(result != null)
+            var result = _ruleService.Get(id);
+            if (result != null)
             {
-                BidResponse response = _mapper.Map<BidResponse>(result);
+                RuleResponse response = _mapper.Map<RuleResponse>(result);
                 return Ok(response);
-            } else
+            }
+            else
             {
                 return NotFound(id);
             }
@@ -59,19 +61,19 @@ namespace PoseidonAPI.Controllers
 
         [Authorize]
         [HttpPost]
-        public IActionResult Add(CreateBidRequest request)
+        public IActionResult Add(CreateRuleRequest request)
         {
-            var bidDTO = _mapper.Map<BidDTO>(request);
+            var ruleDTO = _mapper.Map<RuleDTO>(request);
 
-            BidDTOValidator validator = new BidDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(bidDTO);
+            RuleDTOValidator validator = new RuleDTOValidator();
+            ValidationResult ValidatorResult = validator.Validate(ruleDTO);
             if (ValidatorResult.IsValid)
             {
-                BidResponse response = _mapper.Map<BidResponse>(_bidService.Save(bidDTO));
+                RuleResponse response = _mapper.Map<RuleResponse>(_ruleService.Save(ruleDTO));
 
                 return CreatedAtAction(
                     nameof(Get),
-                    new { id = response.BidId },
+                    new { id = response.RuleId },
                     response);
             }
             else
@@ -85,7 +87,7 @@ namespace PoseidonAPI.Controllers
                         errorField = failure.PropertyName,
                         errorMessage = failure.ErrorMessage,
                     };
-                    
+
                     errors.Add(error);
                 }
 
@@ -95,17 +97,17 @@ namespace PoseidonAPI.Controllers
 
         [Authorize]
         [HttpPut, Route("{id}")]
-        public IActionResult Update(int id, UpsertBidRequest bid)
+        public IActionResult Update(int id, UpsertRuleRequest rule)
         {
-            BidDTO bidDTO = _mapper.Map<BidDTO>(bid);
-            bidDTO.BidId = id;
+            RuleDTO ruleDTO = _mapper.Map<RuleDTO>(rule);
+            ruleDTO.RuleId = id;
 
-            BidDTOValidator validator = new BidDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(bidDTO);
+            RuleDTOValidator validator = new RuleDTOValidator();
+            ValidationResult ValidatorResult = validator.Validate(ruleDTO);
 
             if (ValidatorResult.IsValid)
             {
-                _bidService.Update(bidDTO);
+                _ruleService.Update(ruleDTO);
                 return Ok();
             }
             else
@@ -119,7 +121,7 @@ namespace PoseidonAPI.Controllers
                         errorField = failure.PropertyName,
                         errorMessage = failure.ErrorMessage,
                     };
-                    
+
                     errors.Add(error);
                 }
 
@@ -133,12 +135,12 @@ namespace PoseidonAPI.Controllers
         {
             try
             {
-                _bidService.Delete(id);
+                _ruleService.Delete(id);
                 return Ok();
             }
             catch
             {
-                return BadRequest();
+                return NotFound(id);
             }
         }
     }

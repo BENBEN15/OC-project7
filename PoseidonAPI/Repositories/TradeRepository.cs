@@ -42,6 +42,7 @@ namespace PoseidonAPI.Repositories
         {
             Trade trade = _dbContext.Trades.FirstOrDefault(x => x.TradeId == id);
             _dbContext.Remove(trade);
+            _dbContext.SaveChanges();
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PoseidonAPI.Contracts.Bid;
+using PoseidonAPI.Contracts.CurvePoint;
 using PoseidonAPI.Contracts.Error;
 using PoseidonAPI.Services;
 using PoseidonAPI.Dtos;
@@ -10,16 +10,16 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace PoseidonAPI.Controllers
 {
-    [Route("api/bids")]
+    [Route("api/curvePoints")]
     [ApiController]
-    public class BidsController : ControllerBase
+    public class CurvePointsController : ControllerBase
     {
-        private readonly IService<BidDTO> _bidService;
+        private readonly IService<CurvePointDTO> _curvePointService;
         private readonly IMapper _mapper;
 
-        public BidsController(IService<BidDTO> bidService, IMapper mapper)
+        public CurvePointsController(IService<CurvePointDTO> curvePointService, IMapper mapper)
         {
-            _bidService = bidService;
+            _curvePointService = curvePointService;
             _mapper = mapper;
         }
 
@@ -27,16 +27,17 @@ namespace PoseidonAPI.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            var result = _bidService.GetAll();
-            if(result.Count() > 0)
+            var result = _curvePointService.GetAll();
+            if (result.Count() > 0)
             {
-                List<BidResponse> response = new List<BidResponse>();
+                List<CurvePointResponse> response = new List<CurvePointResponse>();
                 foreach (var item in result)
                 {
-                    response.Add(_mapper.Map<BidResponse>(item));
+                    response.Add(_mapper.Map<CurvePointResponse>(item));
                 }
                 return Ok(response);
-            } else
+            }
+            else
             {
                 return NotFound();
             }
@@ -46,12 +47,13 @@ namespace PoseidonAPI.Controllers
         [HttpGet, Route("{id}")]
         public IActionResult Get(int id)
         {
-            var result = _bidService.Get(id);
-            if(result != null)
+            var result = _curvePointService.Get(id);
+            if (result != null)
             {
-                BidResponse response = _mapper.Map<BidResponse>(result);
+                CurvePointResponse response = _mapper.Map<CurvePointResponse>(result);
                 return Ok(response);
-            } else
+            }
+            else
             {
                 return NotFound(id);
             }
@@ -59,19 +61,19 @@ namespace PoseidonAPI.Controllers
 
         [Authorize]
         [HttpPost]
-        public IActionResult Add(CreateBidRequest request)
+        public IActionResult Add(CreateCurvePointRequest request)
         {
-            var bidDTO = _mapper.Map<BidDTO>(request);
+            var curvePointDTO = _mapper.Map<CurvePointDTO>(request);
 
-            BidDTOValidator validator = new BidDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(bidDTO);
+            CurvePointDTOValidator validator = new CurvePointDTOValidator();
+            ValidationResult ValidatorResult = validator.Validate(curvePointDTO);
             if (ValidatorResult.IsValid)
             {
-                BidResponse response = _mapper.Map<BidResponse>(_bidService.Save(bidDTO));
+                CurvePointResponse response = _mapper.Map<CurvePointResponse>(_curvePointService.Save(curvePointDTO));
 
                 return CreatedAtAction(
                     nameof(Get),
-                    new { id = response.BidId },
+                    new { id = response.CurvePointId },
                     response);
             }
             else
@@ -85,7 +87,7 @@ namespace PoseidonAPI.Controllers
                         errorField = failure.PropertyName,
                         errorMessage = failure.ErrorMessage,
                     };
-                    
+
                     errors.Add(error);
                 }
 
@@ -95,17 +97,17 @@ namespace PoseidonAPI.Controllers
 
         [Authorize]
         [HttpPut, Route("{id}")]
-        public IActionResult Update(int id, UpsertBidRequest bid)
+        public IActionResult Update(int id, UpsertCurvePointRequest curvePoint)
         {
-            BidDTO bidDTO = _mapper.Map<BidDTO>(bid);
-            bidDTO.BidId = id;
+            CurvePointDTO curvePointDTO = _mapper.Map<CurvePointDTO>(curvePoint);
+            curvePointDTO.CurvePointId = id;
 
-            BidDTOValidator validator = new BidDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(bidDTO);
+            CurvePointDTOValidator validator = new CurvePointDTOValidator();
+            ValidationResult ValidatorResult = validator.Validate(curvePointDTO);
 
             if (ValidatorResult.IsValid)
             {
-                _bidService.Update(bidDTO);
+                _curvePointService.Update(curvePointDTO);
                 return Ok();
             }
             else
@@ -119,7 +121,7 @@ namespace PoseidonAPI.Controllers
                         errorField = failure.PropertyName,
                         errorMessage = failure.ErrorMessage,
                     };
-                    
+
                     errors.Add(error);
                 }
 
@@ -133,7 +135,7 @@ namespace PoseidonAPI.Controllers
         {
             try
             {
-                _bidService.Delete(id);
+                _curvePointService.Delete(id);
                 return Ok();
             }
             catch

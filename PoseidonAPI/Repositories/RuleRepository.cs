@@ -42,6 +42,7 @@ namespace PoseidonAPI.Repositories
         {
             Rule rule = _dbContext.Rules.FirstOrDefault(x => x.RuleId == id);
             _dbContext.Remove(rule);
+            _dbContext.SaveChanges();
         }
     }
 }

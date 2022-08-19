@@ -1,7 +1,6 @@
 ﻿namespace PoseidonAPI.Contracts.Trade
 {
     public record UpsertTradeRequest(
-        int TradeId,
         string Account,
         string Type,
         double? BuyQuantity,

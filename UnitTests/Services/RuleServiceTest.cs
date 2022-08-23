@@ -1,9 +1,21 @@
 ﻿using Newtonsoft.Json;
 
-namespace UnitTests.Repositories
+namespace UnitTests.Services
 {
-    public class RuleRepositoryTest
+    public class RuleServiceTest
     {
+        private IMapper mapperCreation()
+        {
+            var mappingConfig = new MapperConfiguration(mc =>
+            {
+                mc.AddProfile(new MappingProfile());
+            });
+
+            IMapper mapper = mappingConfig.CreateMapper();
+
+            return mapper;
+        }
+
         private List<Rule> SeedData()
         {
             var rules = new List<Rule>{
@@ -48,12 +60,15 @@ namespace UnitTests.Repositories
             var contextMock = new Mock<PoseidonDBContext>();
             List<Rule> rules = SeedData();
             contextMock.Setup(x => x.Rules).ReturnsDbSet(rules);
-            RuleRepository ruleRepository = new RuleRepository(contextMock.Object);
+            var mapper = mapperCreation();
+            RuleRepository rulesRepository = new RuleRepository(contextMock.Object);
+            RuleService ruleService = new RuleService(rulesRepository, mapper);
 
             //Act
             int id = 1;
-            var ruleResult = JsonConvert.SerializeObject(ruleRepository.Get(id));
-            var rule = JsonConvert.SerializeObject(SeedData().FirstOrDefault(x => x.RuleId == id));
+            var ruleResult = JsonConvert.SerializeObject(ruleService.Get(id));
+            var ruleDto = mapper.Map<RuleDTO>(SeedData().FirstOrDefault(x => x.RuleId == id));
+            var rule = JsonConvert.SerializeObject(ruleDto);
 
             //Assert
             Assert.NotNull(ruleResult);
@@ -67,11 +82,20 @@ namespace UnitTests.Repositories
             var contextMock = new Mock<PoseidonDBContext>();
             List<Rule> rules = SeedData();
             contextMock.Setup(x => x.Rules).ReturnsDbSet(rules);
-            RuleRepository ruleRepository = new RuleRepository(contextMock.Object);
+            var mapper = mapperCreation();
+            RuleRepository rulesRepository = new RuleRepository(contextMock.Object);
+            RuleService ruleService = new RuleService(rulesRepository, mapper);
 
             //Act
-            var ruleResult = JsonConvert.SerializeObject(ruleRepository.GetAll());
-            var rulelist = JsonConvert.SerializeObject(contextMock.Object.Rules.Where(b => b.RuleId > 0));
+            var ruleResult = JsonConvert.SerializeObject(ruleService.GetAll());
+            var dtoList = new List<RuleDTO>();
+            var rulesDB = contextMock.Object.Rules.Where(b => b.RuleId > 0);
+            foreach (Rule rule in rulesDB)
+            {
+                var dto = mapper.Map<RuleDTO>(rule);
+                dtoList.Add(dto);
+            }
+            var rulelist = JsonConvert.SerializeObject(dtoList);
 
             //Assert
             Assert.NotNull(ruleResult);
@@ -87,11 +111,13 @@ namespace UnitTests.Repositories
             List<Rule> rules = SeedData();
             contextMock.Setup(x => x.Rules).ReturnsDbSet(rules);
             contextMock.Setup(m => m.Add(It.IsAny<Rule>())).Callback<Rule>(rules.Add);
-            RuleRepository ruleRepository = new RuleRepository(contextMock.Object);
+            var mapper = mapperCreation();
+            RuleRepository rulesRepository = new RuleRepository(contextMock.Object);
+            RuleService ruleService = new RuleService(rulesRepository, mapper);
 
             //Act
             int idToGet = 4;
-            Rule ruleToAdd = new Rule
+            RuleDTO ruleToAdd = new RuleDTO
             {
                 RuleId = idToGet,
                 Description = "description4",
@@ -101,16 +127,22 @@ namespace UnitTests.Repositories
                 SqlStr = "sqlStr4",
                 Template = "template4",
             };
-            ruleRepository.Save(ruleToAdd);
 
-            Rule ruleResult = contextMock.Object.Rules.FirstOrDefault(x => x.RuleId == idToGet);
+            RuleDTO ruleResponse = ruleService.Save(ruleToAdd);
+            RuleDTO ruleResult = mapper.Map<RuleDTO>(contextMock.Object.Rules.FirstOrDefault(x => x.RuleId == idToGet));
+
             IEnumerable<Rule> rulelist = contextMock.Object.Rules.Where(b => b.RuleId > 0);
+
+            var ruleToAddJson = JsonConvert.SerializeObject(ruleToAdd);
+            var ruleResponseJson = JsonConvert.SerializeObject(ruleResponse);
+            var rulesResultJson = JsonConvert.SerializeObject(ruleResult);
 
             //Assert
             Assert.NotNull(ruleResult);
             Assert.NotEmpty(rulelist);
             Assert.Equal(4, rulelist.Count());
-            Assert.Same(ruleToAdd, ruleResult);
+            Assert.Equal(ruleToAddJson, rulesResultJson);
+            Assert.Equal(rulesResultJson, ruleResponseJson);
         }
 
         [Fact]
@@ -126,18 +158,20 @@ namespace UnitTests.Repositories
                 context.Database.EnsureDeleted();
                 context.Database.EnsureCreated();
 
-                foreach (var r in SeedData())
+                foreach (var b in SeedData())
                 {
-                    context.Rules.Add(r);
+                    context.Rules.Add(b);
                 }
                 context.SaveChanges();
             }
 
             using (var context = new PoseidonDBContext(options))
             {
-                RuleRepository rulesRepository = new RuleRepository(context);
+                var mapper = mapperCreation();
+                RuleRepository ruleRepository = new RuleRepository(context);
+                RuleService ruleService = new RuleService(ruleRepository, mapper);
 
-                Rule ruleToUpdate = new Rule
+                RuleDTO ruleToUpdate = new RuleDTO
                 {
                     RuleId = 1,
                     Description = "description5",
@@ -149,13 +183,14 @@ namespace UnitTests.Repositories
                 };
 
                 //Act
-                rulesRepository.Update(ruleToUpdate);
-                Rule ruleResult = context.Rules.FirstOrDefault(x => x.RuleId == ruleToUpdate.RuleId);
+                ruleService.Update(ruleToUpdate);
+                RuleDTO rulesResult = mapper.Map<RuleDTO>(context.Rules.FirstOrDefault(x => x.RuleId == ruleToUpdate.RuleId));
+                var rulesToUpdateJson = JsonConvert.SerializeObject(ruleToUpdate);
+                var ruleResultJson = JsonConvert.SerializeObject(rulesResult);
 
                 //Assert
-                Assert.NotNull(ruleResult);
-                Assert.Same(ruleToUpdate, ruleResult);
-
+                Assert.NotNull(rulesResult);
+                Assert.Equal(rulesToUpdateJson, ruleResultJson);
             }
         }
 
@@ -166,12 +201,14 @@ namespace UnitTests.Repositories
             var contextMock = new Mock<PoseidonDBContext>();
             List<Rule> rules = SeedData();
             contextMock.Setup(x => x.Rules).ReturnsDbSet(rules);
-            contextMock.Setup(m => m.Remove(It.IsAny<Rule>())).Callback<Rule>(r => rules.Remove(r));
+            contextMock.Setup(m => m.Remove(It.IsAny<Rule>())).Callback<Rule>(b => rules.Remove(b));
+            var mapper = mapperCreation();
             RuleRepository ruleRepository = new RuleRepository(contextMock.Object);
+            RuleService ruleService = new RuleService(ruleRepository, mapper);
 
             //Act
             int idToDelete = 1;
-            ruleRepository.Delete(idToDelete);
+            ruleService.Delete(idToDelete);
 
             Rule ruleResult = contextMock.Object.Rules.FirstOrDefault(x => x.RuleId == idToDelete);
             IEnumerable<Rule> rulelist = contextMock.Object.Rules.Where(x => x.RuleId > 0);

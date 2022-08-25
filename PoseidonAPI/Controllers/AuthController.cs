@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PoseidonAPI.Contracts.Error;
 using PoseidonAPI.Contracts.User;
-using PoseidonAPI.Model;
+using PoseidonAPI.Validators;
 
 namespace PoseidonAPI.Controllers
 {
@@ -17,6 +19,94 @@ namespace PoseidonAPI.Controllers
         {
             _userManager = userManager;
             _signInManager = signInManager;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUsers()
+        {
+            var result = await _userManager.Users.ToListAsync();
+            return Ok(result);
+        }
+
+        [HttpGet, Route("{userName}")]
+        public async Task<IActionResult> GetUser(string userName)
+        {
+            var result = await _userManager.FindByNameAsync(userName);
+            return Ok(result);
+        }
+
+        [Authorize]
+        [HttpDelete]
+        public async Task<IActionResult> DeleteMyUser(DeleteMyselfRequest request)
+        {
+            var user = _userManager.FindByNameAsync(request.login);
+            var confirmed = await _userManager.CheckPasswordAsync(await user, request.Password);
+            if (confirmed)
+            {
+                try
+                {
+                    var userToDelete = await user;
+                    await _userManager.DeleteAsync(userToDelete);
+                    return Ok("userDeleted");
+                } 
+                catch
+                {
+                    return BadRequest();
+                }
+            } else
+            {
+                return BadRequest("Wrong password or user name");
+            }
+        }
+
+        [Authorize]
+        [HttpPut]
+        public async Task<IActionResult> UpdateMyUser(UpdateUserRequest request)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if(currentUser.UserName == request.userName)
+            {
+                UserValidator userValidator = new UserValidator();
+                var ValidatorResult = userValidator.Validate(request);
+                if(ValidatorResult.IsValid)
+                {
+                    var userToUpdate = await _userManager.FindByNameAsync(request.userName);
+                    userToUpdate.UserName = request.newUserName;
+                    userToUpdate.PhoneNumber = request.phoneNumber;
+                    userToUpdate.Email = request.email;
+
+                    try
+                    {
+                        await _userManager.UpdateAsync(userToUpdate);
+                        return Ok("success");
+                    }
+                    catch
+                    {
+                        return BadRequest("error");
+                    }
+                }
+                else
+                {
+                    List<ErrorModel> errors = new List<ErrorModel>();
+                    foreach (var failure in ValidatorResult.Errors)
+                    {
+                        ErrorModel error = new ErrorModel
+                        {
+                            errorCode = failure.ErrorCode,
+                            errorField = failure.PropertyName,
+                            errorMessage = failure.ErrorMessage,
+                        };
+
+                        errors.Add(error);
+                    }
+
+                    return BadRequest(errors);
+                }
+            } 
+            else
+            {
+                return NotFound();
+            }  
         }
 
         [HttpPost]
@@ -47,7 +137,7 @@ namespace PoseidonAPI.Controllers
         public async Task<IActionResult> logout()
         {
             if(_signInManager.IsSignedIn(User)) await _signInManager.SignOutAsync();
-            return NoContent();
+            return Ok();
         }
 
         [Authorize]
@@ -56,12 +146,5 @@ namespace PoseidonAPI.Controllers
         {
             return Ok(await _userManager.GetUserAsync(User));
         }
-
-        /*[Authorize]
-        [HttpGet, Route("current")]
-        public async Task<IActionResult> UserResetPassword()
-        {
-            return Ok(await _userManager.GetUserAsync(User));
-        }*/
     }
 }

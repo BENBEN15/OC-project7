@@ -7,7 +7,8 @@ namespace PoseidonAPI.Validators
     {
         public TradeDTOValidator()
         {
-
+            RuleFor(trade => trade.Account).NotNull();
+            RuleFor(trade => trade.Type).NotNull();
         }
     }
 }

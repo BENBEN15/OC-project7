@@ -146,5 +146,12 @@ namespace PoseidonAPI.Controllers
         {
             return Ok(await _userManager.GetUserAsync(User));
         }
+
+        /*[Authorize]
+        [HttpPost]
+        public async Task<IActionResult> UpdatePassword()
+        {
+            _userManager.ResetPasswordAsync()
+        }*/
     }
 }

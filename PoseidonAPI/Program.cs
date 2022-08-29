@@ -49,7 +49,7 @@ var builder = WebApplication.CreateBuilder(args);
         {
             Version = "v1",
             Title = "PoseidonAPI",
-            Description = "An ASP.NET Core Web API for managing trades",
+            Description = "An ASP.NET Core Web API for managing trades, Project 7 .NET Back-end path for Openclassroom",
         });
 
         //generate the xml docs for swagger

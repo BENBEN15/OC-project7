@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Net.Mime;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using PoseidonAPI.Contracts.Bid;
 using PoseidonAPI.Contracts.Error;
 using PoseidonAPI.Services;
@@ -6,9 +8,6 @@ using PoseidonAPI.Dtos;
 using PoseidonAPI.Validators;
 using FluentValidation.Results;
 using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
-using System.Net.Mime;
-using Swashbuckle.AspNetCore;
 
 namespace PoseidonAPI.Controllers
 {
@@ -34,11 +33,11 @@ namespace PoseidonAPI.Controllers
         /// <remarks>
         /// Sample request
         /// 
-        ///     GET /bids/
+        ///     GET /bids
         ///     
         /// </remarks>
         /// <response code="200">Returns all bids</response>
-        /// <response code="404">Returned nothing, there are no bids</response>
+        /// <response code="404">You must be logged in to perform this action</response>
         [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(List<BidResponse>), StatusCodes.Status200OK)]
@@ -54,9 +53,10 @@ namespace PoseidonAPI.Controllers
                     response.Add(_mapper.Map<BidResponse>(item));
                 }
                 return Ok(response);
-            } else
+            } 
+            else
             {
-                return NotFound();
+                return NotFound(new ErrorMessage("the list is empty"));
             }
         }
 
@@ -79,7 +79,6 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(typeof(BidResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(IdNotFound),StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        //[SwaggerResponseExample(200, )]
         public IActionResult Get(int id)
         {
             var result = _bidService.Get(id);
@@ -89,8 +88,7 @@ namespace PoseidonAPI.Controllers
                 return Ok(response);
             } else
             {
-                var error = new IdNotFound(id);
-                return BadRequest(error);
+                return BadRequest(new IdNotFound(id));
             }
         }
 
@@ -177,7 +175,7 @@ namespace PoseidonAPI.Controllers
         /// <remarks>
         /// Sample request
         /// 
-        ///     PUT /bids
+        ///     PUT /bids/1
         ///     {
         ///         "account": "account",
         ///         "type": "type",

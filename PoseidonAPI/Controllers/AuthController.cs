@@ -9,7 +9,7 @@ using AutoMapper;
 
 namespace PoseidonAPI.Controllers
 {
-    [Route("api/users")]
+    [Route("/users")]
     [ApiController]
     public class AuthController : ControllerBase
     {

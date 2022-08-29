@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace PoseidonAPI.Controllers
 {
-    [Route("api/rules")]
+    [Route("/rules")]
     [ApiController]
     public class RuleController : ControllerBase
     {

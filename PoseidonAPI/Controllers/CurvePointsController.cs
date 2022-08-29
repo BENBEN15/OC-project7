@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace PoseidonAPI.Controllers
 {
-    [Route("api/curvePoints")]
+    [Route("/curvePoints")]
     [ApiController]
     public class CurvePointsController : ControllerBase
     {

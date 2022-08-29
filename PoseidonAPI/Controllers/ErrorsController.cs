@@ -7,7 +7,7 @@ namespace PoseidonAPI.Controllers
     [ApiController]
     public class ErrorsController : ControllerBase
     {
-        [Route("/error")]
+        [HttpGet, Route("/error")]
         public IActionResult Error()
         {
             return Problem();

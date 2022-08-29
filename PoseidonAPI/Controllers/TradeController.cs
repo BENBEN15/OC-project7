@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace PoseidonAPI.Controllers
 {
-    [Route("api/trades")]
+    [Route("/trades")]
     [ApiController]
     public class TradeController : ControllerBase
     {

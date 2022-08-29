@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace PoseidonAPI.Controllers
 {
-    [Route("api/ratings")]
+    [Route("/ratings")]
     [ApiController]
     public class RatingController : ControllerBase
     {

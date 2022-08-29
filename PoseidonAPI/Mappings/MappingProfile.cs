@@ -1,12 +1,13 @@
 ﻿using AutoMapper;
 using PoseidonAPI.Dtos;
 using PoseidonAPI.Model;
-
 using PoseidonAPI.Contracts.Bid;
 using PoseidonAPI.Contracts.CurvePoint;
 using PoseidonAPI.Contracts.Rating;
 using PoseidonAPI.Contracts.Rule;
 using PoseidonAPI.Contracts.Trade;
+using PoseidonAPI.Contracts.User;
+using Microsoft.AspNetCore.Identity;
 
 
 namespace PoseidonAPI.Mappings
@@ -78,6 +79,9 @@ namespace PoseidonAPI.Mappings
             CreateMap<TradeDTO, CreateTradeRequest>();
             CreateMap<TradeDTO, UpsertTradeRequest>();
             CreateMap<TradeDTO, TradeResponse>();
+
+            //dto to contract User
+            CreateMap<IdentityUser, UserResponse>();
         }
     }
 }

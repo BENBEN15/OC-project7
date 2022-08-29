@@ -1,6 +1,9 @@
 ﻿namespace PoseidonAPI.Contracts.User
 {
-    public class UserResponse
-    {
-    }
+    public record UserResponse(
+        string id,
+        string userName,
+        string email,
+        string phoneNumber
+    );
 }

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using PoseidonAPI.Contracts.Error;
 using PoseidonAPI.Contracts.User;
 using PoseidonAPI.Validators;
+using AutoMapper;
 
 namespace PoseidonAPI.Controllers
 {
@@ -14,25 +15,33 @@ namespace PoseidonAPI.Controllers
     {
         private UserManager<IdentityUser> _userManager;
         private SignInManager<IdentityUser> _signInManager;
+        private readonly IMapper _mapper;
 
-        public AuthController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager)
+        public AuthController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, IMapper mapper)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _mapper = mapper;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
             var result = await _userManager.Users.ToListAsync();
-            return Ok(result);
+            var users = new List<UserResponse>();
+            foreach (var user in result)
+            {
+                users.Add(_mapper.Map<UserResponse>(user));
+            }
+            return Ok(users);
         }
 
         [HttpGet, Route("{userName}")]
         public async Task<IActionResult> GetUser(string userName)
         {
             var result = await _userManager.FindByNameAsync(userName);
-            return Ok(result);
+            var user = _mapper.Map<UserResponse>(result);
+            return Ok(user);
         }
 
         [Authorize]

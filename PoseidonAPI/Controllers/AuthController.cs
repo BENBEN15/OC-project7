@@ -6,10 +6,13 @@ using PoseidonAPI.Contracts.Error;
 using PoseidonAPI.Contracts.User;
 using PoseidonAPI.Validators;
 using AutoMapper;
+using System.Net.Mime;
 
 namespace PoseidonAPI.Controllers
 {
     [Route("/users")]
+    [Produces(MediaTypeNames.Application.Json)]
+    [Consumes(MediaTypeNames.Application.Json)]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -24,7 +27,21 @@ namespace PoseidonAPI.Controllers
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Get all users
+        /// </summary>
+        /// <returns></returns>
+        /// <remarks>
+        /// Sample request
+        /// 
+        ///     GET /users
+        ///     
+        /// </remarks>
+        /// <response code="200">Returns all users</response>
+        /// <response code="404">You must be logged in to perform this action</response>
         [HttpGet]
+        [ProducesResponseType(typeof(List<UserResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetUsers()
         {
             var result = await _userManager.Users.ToListAsync();
@@ -36,40 +53,122 @@ namespace PoseidonAPI.Controllers
             return Ok(users);
         }
 
+        /// <summary>
+        /// Return a user for a given userName
+        /// </summary>
+        /// <param name="userName">the username of the user you want to retrieve</param>
+        /// <returns></returns>
+        /// <remarks>
+        /// Sample request
+        /// 
+        ///     GET /users/username1
+        ///     
+        /// </remarks>
+        /// <response code="200">Returns a single user corresponding to the username</response>
+        /// <response code="400">The username sent does not exist</response>
         [HttpGet, Route("{userName}")]
+        [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessage), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetUser(string userName)
         {
             var result = await _userManager.FindByNameAsync(userName);
-            var user = _mapper.Map<UserResponse>(result);
-            return Ok(user);
-        }
-
-        [Authorize]
-        [HttpDelete]
-        public async Task<IActionResult> DeleteMyUser(DeleteMyselfRequest request)
-        {
-            var user = _userManager.FindByNameAsync(request.login);
-            var confirmed = await _userManager.CheckPasswordAsync(await user, request.Password);
-            if (confirmed)
+            if (result != null)
             {
-                try
-                {
-                    var userToDelete = await user;
-                    await _userManager.DeleteAsync(userToDelete);
-                    return Ok("userDeleted");
-                } 
-                catch
-                {
-                    return BadRequest();
-                }
+                var user = _mapper.Map<UserResponse>(result);
+                return Ok(user);
             } else
             {
-                return BadRequest("Wrong password or user name");
+                return BadRequest(new ErrorMessage("username not found"));
             }
         }
 
+        /// <summary>
+        /// Create a user and adds it to the database
+        /// </summary>
+        /// <returns></returns>
+        /// <remarks>
+        /// Sample request
+        /// 
+        ///     POST /users
+        ///     {
+        ///         "username": "testUser1",
+        ///         "email": "test1@gmail.com",
+        ///         "phoneNumber": "01 00 00 00 00",
+        ///         "password": "@testUser1"
+        ///     }
+        ///     
+        /// </remarks>
+        /// <response code="201">Creation succesfull</response>
+        /// <response code="400">The request sent did not pass the validation, some fields must be wrong or missing</response>
+        /// <response code="404">You must be logged in to access this ressource</response>
+        [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(List<ErrorModel>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Create(CreateUserRequest request)
+        {
+            var validator = new CreateUserValidator();
+            var validatorResult = validator.Validate(request);
+            if (validatorResult.IsValid)
+            {
+                var model = new IdentityUser { 
+                    UserName = request.Username, 
+                    PhoneNumber = request.Phonenumber, 
+                    Email = request.Email  
+                };
+                var result = await _userManager.CreateAsync(model, request.Password);
+                if (result != null)
+                {
+                    return Ok();
+                } 
+                else
+                {
+                    return BadRequest(new ErrorMessage("creation failed"));
+                }
+            }
+            else
+            {
+                List<ErrorModel> errors = new List<ErrorModel>();
+                foreach (var failure in validatorResult.Errors)
+                {
+                    ErrorModel error = new ErrorModel
+                    {
+                        errorCode = failure.ErrorCode,
+                        errorField = failure.PropertyName,
+                        errorMessage = failure.ErrorMessage,
+                    };
+
+                    errors.Add(error);
+                }
+
+                return BadRequest(errors);
+            }
+        }
+
+        /// <summary>
+        /// Update a user
+        /// </summary>
+        /// <returns></returns>
+        /// <remarks>
+        /// Sample request
+        /// 
+        ///     PUT /users
+        ///     {
+        ///         "userName": "testUser1",
+        ///         "newUserName": "testUser2",
+        ///         "email": "test2@gmail.com",
+        ///         "phoneNumber": "02 00 00 00 00"
+        ///     }
+        ///     
+        /// </remarks>
+        /// <response code="200">Update succesfull, the entity have been successfully updated</response>
+        /// <response code="400">The request sent did not pass the validation, some fields must be wrong or missing</response>
+        /// <response code="404">You must be logged in to access this ressource</response>
         [Authorize]
         [HttpPut]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<ErrorModel>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UpdateMyUser(UpdateUserRequest request)
         {
             var currentUser = await _userManager.GetUserAsync(User);
@@ -87,11 +186,11 @@ namespace PoseidonAPI.Controllers
                     try
                     {
                         await _userManager.UpdateAsync(userToUpdate);
-                        return Ok("success");
+                        return Ok();
                     }
                     catch
                     {
-                        return BadRequest("error");
+                        return BadRequest(new ErrorMessage("update failed"));
                     }
                 }
                 else
@@ -114,23 +213,66 @@ namespace PoseidonAPI.Controllers
             } 
             else
             {
-                return NotFound();
+                return BadRequest(new ErrorMessage("you should be logged in"));
             }  
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create(CreateUserRequest request)
+        /// <summary>
+        /// Delete your account(logged in account)
+        /// </summary>
+        /// <returns></returns>
+        /// <remarks>
+        /// Sample request
+        /// 
+        ///     DELETE /users
+        ///     
+        /// </remarks>
+        /// <response code="200">Deletion succesfull, the entity have been successfully deleted</response>
+        /// <response code="400">The request sent did not pass the validation, some fields must be wrong or missing</response>
+        /// <response code="404">You must be logged in to perform this action</response>
+        [Authorize]
+        [HttpDelete]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessage), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteMyUser(DeleteMyselfRequest request)
         {
-            var model = new IdentityUser { 
-                UserName = request.Username, 
-                PhoneNumber = request.Phonenumber, 
-                Email = request.Email  
-            };
-            var result = await _userManager.CreateAsync(model, request.Password);
-            return Ok(result);
+            var user = _userManager.FindByNameAsync(request.login);
+            var confirmed = await _userManager.CheckPasswordAsync(await user, request.Password);
+            if (confirmed)
+            {
+                try
+                {
+                    var userToDelete = await user;
+                    await _userManager.DeleteAsync(userToDelete);
+                    return Ok();
+                } 
+                catch
+                {
+                    return BadRequest();
+                }
+            } 
+            else
+            {
+                return BadRequest(new ErrorMessage("Wrong password or user name"));
+            }
         }
 
+        /// <summary>
+        /// Log to your account using credentials
+        /// </summary>
+        /// <returns></returns>
+        /// <remarks>
+        /// Sample request
+        /// 
+        ///     POST /users/login
+        ///     
+        /// </remarks>
+        /// <response code="200">Returns result of loggin action</response>
+        /// <response code="400">Error in request, login or password incorrect</response>
         [HttpPost, Route("login")]
+        [ProducesResponseType( typeof(Microsoft.AspNetCore.Identity.SignInResult),StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Login(LoginUserRequest request)
         {
             var model = await _userManager.FindByNameAsync(request.login);
@@ -139,28 +281,173 @@ namespace PoseidonAPI.Controllers
                 var result = await _signInManager.PasswordSignInAsync(model, request.Password, false, false);
                 return Ok(result);
             }
-            return NotFound();
+            return BadRequest(new ErrorMessage("username or password incorrect"));
         }
 
+        /// <summary>
+        /// log out of your account
+        /// </summary>
+        /// <returns></returns>
+        /// <remarks>
+        /// Sample request
+        /// 
+        ///     GET /users/logout
+        ///     
+        /// </remarks>
+        /// <response code="200">Logout successful</response>
+        /// <response code="400">Logout failed</response>
         [HttpGet, Route("logout")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> logout()
         {
-            if(_signInManager.IsSignedIn(User)) await _signInManager.SignOutAsync();
-            return Ok();
+            if (_signInManager.IsSignedIn(User)) { 
+                await _signInManager.SignOutAsync();
+                return Ok();
+            } else {
+                return BadRequest();
+            }
+            
         }
 
+        /// <summary>
+        /// get logged in user infos
+        /// </summary>
+        /// <returns></returns>
+        /// <remarks>
+        /// Sample request
+        /// 
+        ///     GET /users/current
+        ///     
+        /// </remarks>
+        /// <response code="200">current(logged in) user infos</response>
+        /// <response code="400">Error, unable to retrieve current user</response>
         [Authorize]
         [HttpGet, Route("current")]
+        [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetMe()
         {
-            return Ok(await _userManager.GetUserAsync(User));
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) {
+                var result = _mapper.Map<UserResponse>(user);
+                return Ok(result);
+            } else
+            {
+                return BadRequest();
+            }
+            
         }
 
-        /*[Authorize]
-        [HttpPost]
-        public async Task<IActionResult> UpdatePassword()
+        /// <summary>
+        /// Send forgot password request
+        /// </summary>
+        /// <returns></returns>
+        /// <remarks>
+        /// Sample request
+        /// 
+        ///     POST /users/forgotPassword
+        ///     
+        /// </remarks>
+        /// <response code="200">send reset password email</response>
+        /// <response code="400">The request sent did not pass the validation, some fields must be wrong or missing</response>
+        [HttpPost, Route("forgotPassword")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<ErrorModel>),StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
         {
-            _userManager.ResetPasswordAsync()
-        }*/
+            var validator = new ForgotPasswordValidator();
+            var ValidatorResult = validator.Validate(request);
+            if (ValidatorResult.IsValid)
+            {
+                var user = await _userManager.FindByEmailAsync(request.email);
+                if (user != null)
+                {
+                    //TODO add mail sender services, token returned only for tests purposes 
+                    var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                    return Ok(token);
+                } 
+                else return BadRequest(new ErrorMessage("This email is not related to any account"));
+            }
+            else
+            {
+                List<ErrorModel> errors = new List<ErrorModel>();
+                foreach (var failure in ValidatorResult.Errors)
+                {
+                    ErrorModel error = new ErrorModel
+                    {
+                        errorCode = failure.ErrorCode,
+                        errorField = failure.PropertyName,
+                        errorMessage = failure.ErrorMessage,
+                    };
+
+                    errors.Add(error);
+                }
+
+                return BadRequest(errors);
+            }
+        }
+
+        /// <summary>
+        /// Reset user password, (token required)
+        /// </summary>
+        /// <returns></returns>
+        /// <remarks>
+        /// Sample request
+        /// 
+        ///     POST /users/resetPassword
+        ///     
+        /// </remarks>
+        /// <response code="200">reset the users password</response>
+        /// <response code="400">The request sent did not pass the validation, some fields must be wrong or missing</response>
+        [HttpPost, Route("resetPassword")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<ErrorModel>), StatusCodes.Status400BadRequest)]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+        {
+            var validator = new ResetPasswordValidator();
+            var ValidatorResult = validator.Validate(request);
+            if (ValidatorResult.IsValid)
+            {
+                var user = await _userManager.FindByEmailAsync(request.email);
+                if (user != null)
+                {
+                    var resetResult = await _userManager.ResetPasswordAsync(user, request.token, request.newPassword);
+                    if (!resetResult.Succeeded)
+                    {
+                        var errors = new List<ErrorModel>();
+                        foreach(var error in resetResult.Errors)
+                        {
+                            errors.Add(new ErrorModel
+                            {
+                                errorMessage = error.Description,
+                                errorCode = error.Code,
+                            });
+                        }
+                        return BadRequest(errors);
+                    } 
+                    else return Ok();
+                }
+                else return BadRequest(new ErrorMessage("This email is not related to any account"));
+            }
+            else
+            {
+                List<ErrorModel> errors = new List<ErrorModel>();
+                foreach (var failure in ValidatorResult.Errors)
+                {
+                    ErrorModel error = new ErrorModel
+                    {
+                        errorCode = failure.ErrorCode,
+                        errorField = failure.PropertyName,
+                        errorMessage = failure.ErrorMessage,
+                    };
+
+                    errors.Add(error);
+                }
+
+                return BadRequest(errors);
+            }
+        }
     }
 }

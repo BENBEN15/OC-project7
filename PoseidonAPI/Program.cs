@@ -7,6 +7,7 @@ using PoseidonAPI.Services;
 using PoseidonAPI.Model;
 using PoseidonAPI.Dtos;
 using System.Reflection;
+using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 {
@@ -33,8 +34,10 @@ var builder = WebApplication.CreateBuilder(args);
 
     //Dbcontext
     builder.Services.AddDbContext<PoseidonDBContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
     //Identity
-    builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<PoseidonDBContext>();
+    builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<PoseidonDBContext>().AddDefaultTokenProviders();
+
     //Authorization
     builder.Services.AddAuthorization();
 
@@ -82,6 +85,8 @@ var builder = WebApplication.CreateBuilder(args);
             }
         });
     });
+    /*builder.Services.AddAuthentication("BasicAuthentication")
+    .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);*/
 }
 
 var app = builder.Build();
@@ -106,5 +111,3 @@ var app = builder.Build();
     app.UseEndpoints(endpoints => endpoints.MapControllers());
     app.Run();
 }
-
-

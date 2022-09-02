@@ -94,9 +94,9 @@ namespace UnitTests.Controllers
             var actionResult = controller.Get(0);
 
             //Assert
-            var result = actionResult as NotFoundObjectResult;
+            var result = actionResult as BadRequestObjectResult;
             Assert.NotNull(result);
-            Assert.IsType<NotFoundObjectResult>(result);
+            Assert.IsType<BadRequestObjectResult>(result);
         }
 
         [Theory, AutoData]

@@ -4,5 +4,6 @@
         string Username,
         string Email,
         string Phonenumber,
-        string Password);
+        string Password,
+        string ConfirmPassword);
 }

@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PoseidonAPI", "PoseidonAPI\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnitTests", "UnitTests\UnitTests.csproj", "{FFCCABE6-7EB7-4815-9314-6CF8607D51E2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmailService", "EmailService\EmailService.csproj", "{CF509329-98BB-4907-BF8B-7002E9B7C4FB}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{FFCCABE6-7EB7-4815-9314-6CF8607D51E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FFCCABE6-7EB7-4815-9314-6CF8607D51E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FFCCABE6-7EB7-4815-9314-6CF8607D51E2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CF509329-98BB-4907-BF8B-7002E9B7C4FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CF509329-98BB-4907-BF8B-7002E9B7C4FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CF509329-98BB-4907-BF8B-7002E9B7C4FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CF509329-98BB-4907-BF8B-7002E9B7C4FB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

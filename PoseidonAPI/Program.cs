@@ -6,6 +6,7 @@ using PoseidonAPI.Repositories;
 using PoseidonAPI.Services;
 using PoseidonAPI.Model;
 using PoseidonAPI.Dtos;
+using PoseidonAPI.Handlers;
 using System.Reflection;
 using Microsoft.AspNetCore.Authentication;
 
@@ -60,7 +61,7 @@ var builder = WebApplication.CreateBuilder(args);
         options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 
         //Add authorisation for swagger
-        options.AddSecurityDefinition("basic", new OpenApiSecurityScheme
+        options.AddSecurityDefinition("BasicAuthentication", new OpenApiSecurityScheme
         {
             In = ParameterLocation.Header,
             Description = "Please enter your credentials",
@@ -78,36 +79,32 @@ var builder = WebApplication.CreateBuilder(args);
                     Reference = new OpenApiReference
                     {
                         Type = ReferenceType.SecurityScheme,
-                        Id="basic"
+                        Id="BasicAuthentication"
                     }
                 },
                 new string[]{}
             }
         });
     });
-    /*builder.Services.AddAuthentication("BasicAuthentication")
-    .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);*/
+    builder.Services.AddAuthentication("BasicAuthentication")
+    .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
 }
 
 var app = builder.Build();
 {
     if (app.Environment.IsDevelopment())
     {
+        app.UseDeveloperExceptionPage();
         app.UseSwagger();
-        app.UseSwaggerUI();
+        app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v1/swagger.json", "BasicAuth v1"));
     }
-
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-        options.RoutePrefix = string.Empty;
-    });
 
     app.UseExceptionHandler("/error");
     app.UseHttpsRedirection();
     app.UseRouting();
     app.UseAuthentication();
     app.UseAuthorization();
-    app.UseEndpoints(endpoints => endpoints.MapControllers());
+    app.MapControllers();
+    //app.UseEndpoints(endpoints => endpoints.MapControllers());
     app.Run();
 }

@@ -18,8 +18,8 @@ namespace PoseidonAPI.Handlers
     {
         #region Property  
         //readonly IUserService _userService;
-        private readonly UserManager<IdentityUser> _userManager;
-        private readonly SignInManager<IdentityUser> _signInManager;
+        private UserManager<IdentityUser> _userManager;
+        private SignInManager<IdentityUser> _signInManager;
         #endregion
 
         #region Constructor  
@@ -48,10 +48,11 @@ namespace PoseidonAPI.Handlers
                 var user = await _userManager.FindByNameAsync(username);
                 if (user != null)
                 {
-                    var result = await _userManager.
+                    var result = await _signInManager.PasswordSignInAsync(user, password, false, false);
+                    if (!result.Succeeded)
+                        throw new ArgumentException("Invalid credentials");
                 }
-                if (!_userService.ValidateCredentials(username, password))
-                    throw new ArgumentException("Invalid credentials");
+                
             }
             catch (Exception ex)
             {

@@ -86,6 +86,8 @@ var builder = WebApplication.CreateBuilder(args);
             }
         });
     });
+
+    //TODO fix swagger authentication issue
     builder.Services.AddAuthentication("BasicAuthentication")
     .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
 }
@@ -106,5 +108,10 @@ var app = builder.Build();
     app.UseAuthorization();
     app.MapControllers();
     //app.UseEndpoints(endpoints => endpoints.MapControllers());
+
+    //Adding logger 
+    var loggerFactory = app.Services.GetService<ILoggerFactory>();
+    loggerFactory.AddFile($@"{Directory.GetCurrentDirectory()}\Logs\log.txt");
+
     app.Run();
 }

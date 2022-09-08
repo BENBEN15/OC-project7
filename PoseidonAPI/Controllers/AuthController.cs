@@ -7,6 +7,8 @@ using PoseidonAPI.Contracts.User;
 using PoseidonAPI.Validators;
 using AutoMapper;
 using System.Net.Mime;
+using SendGrid;
+using SendGrid.Helpers.Mail;
 
 namespace PoseidonAPI.Controllers
 {
@@ -365,7 +367,28 @@ namespace PoseidonAPI.Controllers
                 {
                     //TODO add mail sender services, token returned only for tests purposes 
                     var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                    return Ok(token);
+
+                    //API KEY 
+                    var apiKey = "YOUR_KEY_HERE";
+                    var client = new SendGridClient(apiKey);
+                    var from = new EmailAddress("test@example.com", "Example User");
+                    var subject = "Forgot password mail";
+                    var to = new EmailAddress(request.email, "Example User");
+                    var plainTextContent = "reset password link : https://localhost:7102/users/resetPassword/?="+token;
+                    var htmlContent = "<strong>test html content</strong>";
+                    var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
+                    var response = await client.SendEmailAsync(msg);
+
+                    //var response = await client.SendEmailAsync(msg);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return Ok("success");
+                    } 
+                    else
+                    {
+                        return BadRequest();
+                    }
+                    
                 } 
                 else return BadRequest(new ErrorMessage("This email is not related to any account"));
             }

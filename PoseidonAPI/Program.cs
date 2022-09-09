@@ -17,7 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
     //Automapper
     builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-    //Repositories
+    //Repositories and serives
     builder.Services.AddScoped<IRepository<Bid>, BidRepository>();
     builder.Services.AddScoped<IService<BidDTO>, BidService>();
 
@@ -32,6 +32,9 @@ var builder = WebApplication.CreateBuilder(args);
 
     builder.Services.AddScoped<IRepository<Trade>, TradeRepository>();
     builder.Services.AddScoped<IService<TradeDTO>, TradeService>();
+
+    //email service
+    builder.Services.AddScoped<IEmailService, EmailService>();
 
     //Dbcontext
     builder.Services.AddDbContext<PoseidonDBContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -90,6 +93,7 @@ var builder = WebApplication.CreateBuilder(args);
     //TODO fix swagger authentication issue
     builder.Services.AddAuthentication("BasicAuthentication")
     .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
+
 }
 
 var app = builder.Build();
@@ -101,6 +105,10 @@ var app = builder.Build();
         app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v1/swagger.json", "BasicAuth v1"));
     }
 
+    //Adding logger 
+    var loggerFactory = app.Services.GetService<ILoggerFactory>();
+    loggerFactory.AddFile($@"{Directory.GetCurrentDirectory()}\Logs\log.txt");
+
     app.UseExceptionHandler("/error");
     app.UseHttpsRedirection();
     app.UseRouting();
@@ -108,10 +116,6 @@ var app = builder.Build();
     app.UseAuthorization();
     app.MapControllers();
     //app.UseEndpoints(endpoints => endpoints.MapControllers());
-
-    //Adding logger 
-    var loggerFactory = app.Services.GetService<ILoggerFactory>();
-    loggerFactory.AddFile($@"{Directory.GetCurrentDirectory()}\Logs\log.txt");
 
     app.Run();
 }

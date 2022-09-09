@@ -19,11 +19,14 @@ namespace PoseidonAPI.Controllers
     {
         private readonly IService<BidDTO> _bidService;
         private readonly IMapper _mapper;
+        //private readonly ILogger<BidsController> _logger;
+
 
         public BidsController(IService<BidDTO> bidService, IMapper mapper)
         {
             _bidService = bidService;
             _mapper = mapper;
+            //_logger = logger;
         }
 
         /// <summary>
@@ -44,6 +47,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetAll()
         {
+            //_logger.LogInformation("test log bidcontroller", DateTime.UtcNow.ToLongTimeString());
             var result = _bidService.GetAll();
             if (result.Count() > 0)
             {
@@ -52,7 +56,9 @@ namespace PoseidonAPI.Controllers
                 {
                     response.Add(_mapper.Map<BidResponse>(item));
                 }
+
                 return Ok(response);
+                
             } 
             else
             {

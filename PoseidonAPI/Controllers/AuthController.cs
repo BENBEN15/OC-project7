@@ -3,12 +3,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PoseidonAPI.Contracts.Error;
+using PoseidonAPI.Contracts.Base;
 using PoseidonAPI.Contracts.User;
 using PoseidonAPI.Validators;
+using PoseidonAPI.Services;
 using AutoMapper;
 using System.Net.Mime;
-using SendGrid;
-using SendGrid.Helpers.Mail;
 
 namespace PoseidonAPI.Controllers
 {
@@ -20,13 +20,15 @@ namespace PoseidonAPI.Controllers
     {
         private UserManager<IdentityUser> _userManager;
         private SignInManager<IdentityUser> _signInManager;
+        private IEmailService _emailService;
         private readonly IMapper _mapper;
 
-        public AuthController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, IMapper mapper)
+        public AuthController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, IMapper mapper, IEmailService emailService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _mapper = mapper;
+            _emailService = emailService;
         }
 
         /// <summary>
@@ -70,7 +72,7 @@ namespace PoseidonAPI.Controllers
         /// <response code="400">The username sent does not exist</response>
         [HttpGet, Route("{userName}")]
         [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ErrorMessage), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResponseBase), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetUser(string userName)
         {
             var result = await _userManager.FindByNameAsync(userName);
@@ -80,7 +82,7 @@ namespace PoseidonAPI.Controllers
                 return Ok(user);
             } else
             {
-                return BadRequest(new ErrorMessage("username not found"));
+                return BadRequest(new ResponseBase(false, 400, "username_not_found" ,"username not found"));
             }
         }
 
@@ -105,7 +107,7 @@ namespace PoseidonAPI.Controllers
         /// <response code="404">You must be logged in to access this ressource</response>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(typeof(List<ErrorModel>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(List<ResponseBase>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Create(CreateUserRequest request)
         {
@@ -125,7 +127,7 @@ namespace PoseidonAPI.Controllers
                 } 
                 else
                 {
-                    return BadRequest(new ErrorMessage("creation failed"));
+                    return BadRequest(new ResponseBase(false, 400, "creation_failed", "creation failed"));
                 }
             }
             else
@@ -192,7 +194,7 @@ namespace PoseidonAPI.Controllers
                     }
                     catch
                     {
-                        return BadRequest(new ErrorMessage("update failed"));
+                        return BadRequest(new ResponseBase(false, 400, "update_failed","update failed"));
                     }
                 }
                 else
@@ -215,7 +217,7 @@ namespace PoseidonAPI.Controllers
             } 
             else
             {
-                return BadRequest(new ErrorMessage("you should be logged in"));
+                return BadRequest(new ResponseBase(false, 400, "not_logged_in", "you should be logged in"));
             }  
         }
 
@@ -235,7 +237,7 @@ namespace PoseidonAPI.Controllers
         [Authorize]
         [HttpDelete]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ErrorMessage), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResponseBase), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteMyUser(DeleteMyselfRequest request)
         {
@@ -251,12 +253,12 @@ namespace PoseidonAPI.Controllers
                 } 
                 catch
                 {
-                    return BadRequest();
+                    return BadRequest(new ResponseBase(false, 400, "delete_failed", "deletion failed"));
                 }
             } 
             else
             {
-                return BadRequest(new ErrorMessage("Wrong password or user name"));
+                return BadRequest(new ResponseBase(false, 400, "invalid_credentials", "Wrong password or user name"));
             }
         }
 
@@ -274,7 +276,7 @@ namespace PoseidonAPI.Controllers
         /// <response code="400">Error in request, login or password incorrect</response>
         [HttpPost, Route("login")]
         [ProducesResponseType( typeof(Microsoft.AspNetCore.Identity.SignInResult),StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType( typeof(ResponseBase),StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Login(LoginUserRequest request)
         {
             var model = await _userManager.FindByNameAsync(request.login);
@@ -283,7 +285,7 @@ namespace PoseidonAPI.Controllers
                 var result = await _signInManager.PasswordSignInAsync(model, request.Password, false, false);
                 return Ok(result);
             }
-            return BadRequest(new ErrorMessage("username or password incorrect"));
+            return BadRequest(new ResponseBase(false, 400, "invalid_credentials", "username or password incorrect"));
         }
 
         /// <summary>
@@ -299,15 +301,15 @@ namespace PoseidonAPI.Controllers
         /// <response code="200">Logout successful</response>
         /// <response code="400">Logout failed</response>
         [HttpGet, Route("logout")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResponseBase), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseBase), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> logout()
         {
             if (_signInManager.IsSignedIn(User)) { 
                 await _signInManager.SignOutAsync();
-                return Ok();
+                return Ok(new ResponseBase(true, 200, "logout_success", "you have been logged out successfully"));
             } else {
-                return BadRequest();
+                return BadRequest(new ResponseBase(false, 400, "logout_failed", "log out has failed"));
             }
             
         }
@@ -327,7 +329,7 @@ namespace PoseidonAPI.Controllers
         [Authorize]
         [HttpGet, Route("current")]
         [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResponseBase), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetMe()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -354,43 +356,43 @@ namespace PoseidonAPI.Controllers
         /// <response code="200">send reset password email</response>
         /// <response code="400">The request sent did not pass the validation, some fields must be wrong or missing</response>
         [HttpPost, Route("forgotPassword")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseBase), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(List<ErrorModel>),StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResponseBase),StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
         {
             var validator = new ForgotPasswordValidator();
             var ValidatorResult = validator.Validate(request);
             if (ValidatorResult.IsValid)
             {
-                var user = await _userManager.FindByEmailAsync(request.email);
-                if (user != null)
+                try
                 {
-                    //TODO add mail sender services, token returned only for tests purposes 
-                    var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-
-                    //API KEY 
-                    var apiKey = "YOUR_KEY_HERE";
-                    var client = new SendGridClient(apiKey);
-                    var from = new EmailAddress("test@example.com", "Example User");
-                    var subject = "Forgot password mail";
-                    var to = new EmailAddress(request.email, "Example User");
-                    var plainTextContent = "reset password link : https://localhost:7102/users/resetPassword/?="+token;
-                    var htmlContent = "<strong>test html content</strong>";
-                    var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
-                    var response = await client.SendEmailAsync(msg);
-
-                    //var response = await client.SendEmailAsync(msg);
-                    if (response.IsSuccessStatusCode)
+                var user = await _userManager.FindByEmailAsync(request.email);
+                    if (user != null)
                     {
-                        return Ok("success");
-                    } 
-                    else
-                    {
-                        return BadRequest();
-                    }
+                        //TODO add mail sender services, token returned only for tests purposes 
+                        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+                        var response = await _emailService.sendResetPasswordEmail(token, request.email);
+
+                        //var response = await client.SendEmailAsync(msg);
+                        if (response)
+                        {
+                            return Ok(new ResponseBase(true, 200, "reset_mail_sent", "An email has been sent"));
+                        } 
+                        else
+                        {
+                            return BadRequest(new ResponseBase(false, 400, "reset_mail_not_sent", "an error occured"));
+                        }
                     
-                } 
-                else return BadRequest(new ErrorMessage("This email is not related to any account"));
+                    } 
+                    else return BadRequest(new ResponseBase(false, 400, "email_invalid" ,"This email is not related to any account"));
+                }
+                catch(Exception ex)
+                {
+                    return BadRequest(ex);
+                }
+                
             }
             else
             {
@@ -411,6 +413,12 @@ namespace PoseidonAPI.Controllers
             }
         }
 
+        /*[HttpGet]
+        public IActionResult ResetPassword(string code)
+        {
+            return code == null ? View("Error") : View();
+        }*/
+
         /// <summary>
         /// Reset user password, (token required)
         /// </summary>
@@ -424,8 +432,9 @@ namespace PoseidonAPI.Controllers
         /// <response code="200">reset the users password</response>
         /// <response code="400">The request sent did not pass the validation, some fields must be wrong or missing</response>
         [HttpPost, Route("resetPassword")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseBase), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(List<ErrorModel>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(List<ResponseBase>), StatusCodes.Status400BadRequest)]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
         {
@@ -450,9 +459,9 @@ namespace PoseidonAPI.Controllers
                         }
                         return BadRequest(errors);
                     } 
-                    else return Ok();
+                    else return Ok(new ResponseBase(true, 200, "reset_password_success", "Your password has been changed successfully"));
                 }
-                else return BadRequest(new ErrorMessage("This email is not related to any account"));
+                else return BadRequest(new ResponseBase(false, 400, "email_invalid", "This email is not related to any account"));
             }
             else
             {

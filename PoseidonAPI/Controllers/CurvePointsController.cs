@@ -19,11 +19,13 @@ namespace PoseidonAPI.Controllers
     {
         private readonly IService<CurvePointDTO> _curvePointService;
         private readonly IMapper _mapper;
+        private readonly ILogger<CurvePointsController> _logger;
 
-        public CurvePointsController(IService<CurvePointDTO> curvePointService, IMapper mapper)
+        public CurvePointsController(IService<CurvePointDTO> curvePointService, IMapper mapper, ILogger<CurvePointsController> logger)
         {
             _curvePointService = curvePointService;
             _mapper = mapper;
+            _logger = logger;
         }
 
         /// <summary>
@@ -44,6 +46,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetAll()
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : GET /curvePoints, callback : GetAll()", DateTime.UtcNow.ToLongTimeString());
             var result = _curvePointService.GetAll();
             if (result.Count() > 0)
             {
@@ -81,6 +84,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Get(int id)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : GET /curvePoints/{id}, callback : Get()", DateTime.UtcNow.ToLongTimeString());
             var result = _curvePointService.Get(id);
             if (result != null)
             {
@@ -120,6 +124,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Add(CreateCurvePointRequest request)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /curvePoints, callback : Add(), params : {request}", DateTime.UtcNow.ToLongTimeString());
             var curvePointDTO = _mapper.Map<CurvePointDTO>(request);
 
             CurvePointDTOValidator validator = new CurvePointDTOValidator();
@@ -180,6 +185,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Update(int id, UpsertCurvePointRequest curvePoint)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /curvePoints/{id}, callback : Update(), params : {curvePoint}", DateTime.UtcNow.ToLongTimeString());
             CurvePointDTO curvePointDTO = _mapper.Map<CurvePointDTO>(curvePoint);
             curvePointDTO.CurvePointId = id;
 
@@ -231,6 +237,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Delete(int id)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : DELETE /curvePoints/{id}, callback : Delete()", DateTime.UtcNow.ToLongTimeString());
             try
             {
                 _curvePointService.Delete(id);

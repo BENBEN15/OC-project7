@@ -12,7 +12,9 @@ using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 {
-    // Add services to the container.
+    //Clear providers
+    builder.Logging.ClearProviders();
+    builder.Logging.AddConsole();
 
     //Automapper
     builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

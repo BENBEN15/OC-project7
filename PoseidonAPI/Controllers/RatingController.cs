@@ -19,11 +19,13 @@ namespace PoseidonAPI.Controllers
     {
         private readonly IService<RatingDTO> _ratingService;
         private readonly IMapper _mapper;
+        private readonly ILogger<RatingController> _logger;
 
-        public RatingController(IService<RatingDTO> ratingService, IMapper mapper)
+        public RatingController(IService<RatingDTO> ratingService, IMapper mapper, ILogger<RatingController> logger)
         {
             _ratingService = ratingService;
             _mapper = mapper;
+            _logger = logger;
         }
 
         /// <summary>
@@ -44,6 +46,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetAll()
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : GET /ratings, callback : GetAll()", DateTime.UtcNow.ToLongTimeString());
             var result = _ratingService.GetAll();
             if (result.Count() > 0)
             {
@@ -81,6 +84,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Get(int id)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : GET /ratings/{id}, callback : Get()", DateTime.UtcNow.ToLongTimeString());
             var result = _ratingService.Get(id);
             if (result != null)
             {
@@ -119,6 +123,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Add(CreateRatingRequest request)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /ratings, callback : Add(), params : {request}", DateTime.UtcNow.ToLongTimeString());
             var ratingDTO = _mapper.Map<RatingDTO>(request);
 
             RatingDTOValidator validator = new RatingDTOValidator();
@@ -178,6 +183,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Update(int id, UpsertRatingRequest rating)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /ratings/{id}, callback : Update(), params : {rating}", DateTime.UtcNow.ToLongTimeString());
             RatingDTO ratingDTO = _mapper.Map<RatingDTO>(rating);
             ratingDTO.RatingId = id;
 
@@ -229,6 +235,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Delete(int id)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : DELETE /ratings/{id}, callback : Delete()", DateTime.UtcNow.ToLongTimeString());
             try
             {
                 _ratingService.Delete(id);

@@ -22,13 +22,15 @@ namespace PoseidonAPI.Controllers
         private SignInManager<IdentityUser> _signInManager;
         private IEmailService _emailService;
         private readonly IMapper _mapper;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, IMapper mapper, IEmailService emailService)
+        public AuthController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, IMapper mapper, IEmailService emailService, ILogger<AuthController> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _mapper = mapper;
             _emailService = emailService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -48,6 +50,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetUsers()
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : GET /users, callback : GetAll()", DateTime.UtcNow.ToLongTimeString());
             var result = await _userManager.Users.ToListAsync();
             var users = new List<UserResponse>();
             foreach (var user in result)
@@ -75,6 +78,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(typeof(ResponseBase), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetUser(string userName)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : GET /userName/{userName}, callback : Get()", DateTime.UtcNow.ToLongTimeString());
             var result = await _userManager.FindByNameAsync(userName);
             if (result != null)
             {
@@ -111,6 +115,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Create(CreateUserRequest request)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /users, callback : Create(), params : {request}", DateTime.UtcNow.ToLongTimeString());
             var validator = new CreateUserValidator();
             var validatorResult = validator.Validate(request);
             if (validatorResult.IsValid)
@@ -175,6 +180,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UpdateMyUser(UpdateUserRequest request)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /users, callback : Update(), params : {request}", DateTime.UtcNow.ToLongTimeString());
             var currentUser = await _userManager.GetUserAsync(User);
             if(currentUser.UserName == request.userName)
             {
@@ -241,6 +247,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteMyUser(DeleteMyselfRequest request)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : DELETE /users, callback : Delete(), params : {request}", DateTime.UtcNow.ToLongTimeString());
             var user = _userManager.FindByNameAsync(request.login);
             var confirmed = await _userManager.CheckPasswordAsync(await user, request.Password);
             if (confirmed)
@@ -279,6 +286,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType( typeof(ResponseBase),StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Login(LoginUserRequest request)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /users/login, callback : Login(), params : {request}", DateTime.UtcNow.ToLongTimeString());
             var model = await _userManager.FindByNameAsync(request.login);
             if(model != null)
             {
@@ -305,6 +313,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(typeof(ResponseBase), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> logout()
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : GET /users/logout, callback : Logout()", DateTime.UtcNow.ToLongTimeString());
             if (_signInManager.IsSignedIn(User)) { 
                 await _signInManager.SignOutAsync();
                 return Ok(new ResponseBase(true, 200, "logout_success", "you have been logged out successfully"));
@@ -332,6 +341,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(typeof(ResponseBase), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetMe()
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : GET /users/current, callback : GetMe()", DateTime.UtcNow.ToLongTimeString());
             var user = await _userManager.GetUserAsync(User);
             if (user == null) {
                 var result = _mapper.Map<UserResponse>(user);
@@ -361,6 +371,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(typeof(ResponseBase),StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /users/forgotPassword, callback : ForgotPassword()", DateTime.UtcNow.ToLongTimeString());
             var validator = new ForgotPasswordValidator();
             var ValidatorResult = validator.Validate(request);
             if (ValidatorResult.IsValid)
@@ -438,6 +449,7 @@ namespace PoseidonAPI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /users/resetPassword, callback : ResetPassword()8", DateTime.UtcNow.ToLongTimeString());
             var validator = new ResetPasswordValidator();
             var ValidatorResult = validator.Validate(request);
             if (ValidatorResult.IsValid)

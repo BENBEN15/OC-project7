@@ -19,11 +19,13 @@ namespace PoseidonAPI.Controllers
     {
         private readonly IService<RuleDTO> _ruleService;
         private readonly IMapper _mapper;
+        private readonly ILogger<RuleController> _logger;
 
-        public RuleController(IService<RuleDTO> ruleService, IMapper mapper)
+        public RuleController(IService<RuleDTO> ruleService, IMapper mapper, ILogger<RuleController> logger)
         {
             _ruleService = ruleService;
             _mapper = mapper;
+            _logger = logger;
         }
 
         /// <summary>
@@ -44,6 +46,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetAll()
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : GET /rules, callback : GetAll()", DateTime.UtcNow.ToLongTimeString());
             var result = _ruleService.GetAll();
             if (result.Count() > 0)
             {
@@ -81,6 +84,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Get(int id)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : GET /rules/{id}, callback : Get()", DateTime.UtcNow.ToLongTimeString());
             var result = _ruleService.Get(id);
             if (result != null)
             {
@@ -121,6 +125,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Add(CreateRuleRequest request)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /rules, callback : Add(), params : {request}", DateTime.UtcNow.ToLongTimeString());
             var ruleDTO = _mapper.Map<RuleDTO>(request);
 
             RuleDTOValidator validator = new RuleDTOValidator();
@@ -182,6 +187,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Update(int id, UpsertRuleRequest rule)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /rules/{id}, callback : Update(), params : {rule}", DateTime.UtcNow.ToLongTimeString());
             RuleDTO ruleDTO = _mapper.Map<RuleDTO>(rule);
             ruleDTO.RuleId = id;
 
@@ -233,6 +239,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Delete(int id)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : DELETE /rules/{id}, callback : Delete()", DateTime.UtcNow.ToLongTimeString());
             try
             {
                 _ruleService.Delete(id);

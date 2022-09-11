@@ -19,11 +19,13 @@ namespace PoseidonAPI.Controllers
     {
         private readonly IService<TradeDTO> _tradeService;
         private readonly IMapper _mapper;
+        private readonly ILogger<TradeController> _logger;
 
-        public TradeController(IService<TradeDTO> tradeService, IMapper mapper)
+        public TradeController(IService<TradeDTO> tradeService, IMapper mapper, ILogger<TradeController> logger)
         {
             _tradeService = tradeService;
             _mapper = mapper;
+            _logger = logger;
         }
 
         /// <summary>
@@ -44,6 +46,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetAll()
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : GET /trades, callback : GetAll()", DateTime.UtcNow.ToLongTimeString());
             var result = _tradeService.GetAll();
             if (result.Count() > 0)
             {
@@ -81,6 +84,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Get(int id)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : GET /trades/{id}, callback : Get()", DateTime.UtcNow.ToLongTimeString());
             var result = _tradeService.Get(id);
             if (result != null)
             {
@@ -135,6 +139,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Add(CreateTradeRequest request)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /trades, callback : Add(), params : {request}", DateTime.UtcNow.ToLongTimeString());
             var tradeDTO = _mapper.Map<TradeDTO>(request);
 
             TradeDTOValidator validator = new TradeDTOValidator();
@@ -210,6 +215,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Update(int id, UpsertTradeRequest trade)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /trades/{id}, callback : Update(), params : {trade}", DateTime.UtcNow.ToLongTimeString());
             TradeDTO tradeDTO = _mapper.Map<TradeDTO>(trade);
             tradeDTO.TradeId = id;
 
@@ -261,6 +267,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Delete(int id)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : DELETE /trades/{id}, callback : Delete()", DateTime.UtcNow.ToLongTimeString());
             try
             {
                 _tradeService.Delete(id);

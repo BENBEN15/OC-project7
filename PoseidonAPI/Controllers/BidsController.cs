@@ -19,14 +19,14 @@ namespace PoseidonAPI.Controllers
     {
         private readonly IService<BidDTO> _bidService;
         private readonly IMapper _mapper;
-        //private readonly ILogger<BidsController> _logger;
+        private readonly ILogger<BidsController> _logger;
 
 
-        public BidsController(IService<BidDTO> bidService, IMapper mapper)
+        public BidsController(IService<BidDTO> bidService, IMapper mapper, ILogger<BidsController> logger)
         {
             _bidService = bidService;
             _mapper = mapper;
-            //_logger = logger;
+            _logger = logger;
         }
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetAll()
         {
-            //_logger.LogInformation("test log bidcontroller", DateTime.UtcNow.ToLongTimeString());
+            _logger.LogInformation($"User : {User.Identity.Name}, route : GET /bids, callback : GetAll()", DateTime.UtcNow.ToLongTimeString());
             var result = _bidService.GetAll();
             if (result.Count() > 0)
             {
@@ -87,6 +87,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Get(int id)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : GET /bids/{id}, callback : Get()", DateTime.UtcNow.ToLongTimeString());
             var result = _bidService.Get(id);
             if(result != null)
             {
@@ -141,6 +142,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Add(CreateBidRequest request)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /bids, callback : Add(), params : {request}", DateTime.UtcNow.ToLongTimeString());
             var bidDTO = _mapper.Map<BidDTO>(request);
 
             BidDTOValidator validator = new BidDTOValidator();
@@ -217,6 +219,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Update(int id, UpsertBidRequest bid)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /bids/{id}, callback : Update(), params : {bid}", DateTime.UtcNow.ToLongTimeString());
             BidDTO bidDTO = _mapper.Map<BidDTO>(bid);
             bidDTO.BidId = id;
 
@@ -268,6 +271,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Delete(int id)
         {
+            _logger.LogInformation($"User : {User.Identity.Name}, route : DELETE /bids/{id}, callback : Delete()", DateTime.UtcNow.ToLongTimeString());
             try
             {
                 _bidService.Delete(id);

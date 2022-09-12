@@ -1,5 +1,6 @@
 ﻿using SendGrid;
 using SendGrid.Helpers.Mail;
+using System.Web;
 
 namespace PoseidonAPI.Services
 {
@@ -18,7 +19,8 @@ namespace PoseidonAPI.Services
             var from = new EmailAddress("bserre15250@gmail.com", "Poseidon Inc");
             var subject = "Forgot password mail";
             var to = new EmailAddress(toEmail, "Example User");
-            string link = "https://localhost:7102/AuthController/resetPassword/?=" + token;
+            var urlToken = HttpUtility.UrlEncode(token);
+            string link = "https://localhost:7102/ResetPassword/Index/?token=" + urlToken;
             //var callbackUrl = Url.Action("ResetPassword", "Auth", new { code = token });
             var plainTextContent = "reset password link : " + link;
             string htmlContent = @"<strong>reset password link : <a href=" + link + ">click here</a></strong>";

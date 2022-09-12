@@ -123,7 +123,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Add(CreateRatingRequest request)
         {
-            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /ratings, callback : Add(), params : {request}", DateTime.UtcNow.ToLongTimeString());
+            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /ratings, callback : Add()", DateTime.UtcNow.ToLongTimeString());
             var ratingDTO = _mapper.Map<RatingDTO>(request);
 
             RatingDTOValidator validator = new RatingDTOValidator();
@@ -183,7 +183,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Update(int id, UpsertRatingRequest rating)
         {
-            _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /ratings/{id}, callback : Update(), params : {rating}", DateTime.UtcNow.ToLongTimeString());
+            _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /ratings/{id}, callback : Update()", DateTime.UtcNow.ToLongTimeString());
             RatingDTO ratingDTO = _mapper.Map<RatingDTO>(rating);
             ratingDTO.RatingId = id;
 

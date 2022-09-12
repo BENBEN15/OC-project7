@@ -125,7 +125,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Add(CreateRuleRequest request)
         {
-            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /rules, callback : Add(), params : {request}", DateTime.UtcNow.ToLongTimeString());
+            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /rules, callback : Add()", DateTime.UtcNow.ToLongTimeString());
             var ruleDTO = _mapper.Map<RuleDTO>(request);
 
             RuleDTOValidator validator = new RuleDTOValidator();
@@ -187,7 +187,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Update(int id, UpsertRuleRequest rule)
         {
-            _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /rules/{id}, callback : Update(), params : {rule}", DateTime.UtcNow.ToLongTimeString());
+            _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /rules/{id}, callback : Update()", DateTime.UtcNow.ToLongTimeString());
             RuleDTO ruleDTO = _mapper.Map<RuleDTO>(rule);
             ruleDTO.RuleId = id;
 

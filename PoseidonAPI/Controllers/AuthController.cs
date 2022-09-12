@@ -111,11 +111,25 @@ namespace PoseidonAPI.Controllers
         /// <response code="404">You must be logged in to access this ressource</response>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(typeof(List<ResponseBase>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(List<ErrorModel>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Create(CreateUserRequest request)
         {
-            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /users, callback : Create(), params : {request}", DateTime.UtcNow.ToLongTimeString());
+            //CreateUserRequest loggerRequest = new CreateUserRequest(request.Username, request.Email, request.Phonenumber, "", "");
+            _logger.LogInformation($"User : annonymous, route : POST /users, callback : Create()", DateTime.UtcNow.ToLongTimeString());
+
+            var userNameExists = await _userManager.FindByNameAsync(request.Username);
+            if (userNameExists != null)
+            {
+                return BadRequest(new ResponseBase(false, 400, "username_already_exists", "this username is already attributed"));
+            }
+
+            var emailExists = await _userManager.FindByEmailAsync(request.Email);
+            if (emailExists != null)
+            {
+                return BadRequest(new ResponseBase(false, 400, "email_already_exists", "this email is already attributed to an existing account"));
+            }
+
             var validator = new CreateUserValidator();
             var validatorResult = validator.Validate(request);
             if (validatorResult.IsValid)
@@ -128,7 +142,8 @@ namespace PoseidonAPI.Controllers
                 var result = await _userManager.CreateAsync(model, request.Password);
                 if (result != null)
                 {
-                    return Ok();
+                    UserResponse response = _mapper.Map<UserResponse>(model);
+                    return CreatedAtAction("GetUser", new {userName = request.Username}, response);
                 } 
                 else
                 {
@@ -180,10 +195,22 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UpdateMyUser(UpdateUserRequest request)
         {
-            _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /users, callback : Update(), params : {request}", DateTime.UtcNow.ToLongTimeString());
+            _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /users, callback : Update()", DateTime.UtcNow.ToLongTimeString());
             var currentUser = await _userManager.GetUserAsync(User);
             if(currentUser.UserName == request.userName)
             {
+                var userNameExists = await _userManager.FindByNameAsync(request.userName);
+                if (userNameExists != null)
+                {
+                    return BadRequest(new ResponseBase(false, 400, "username_already_exists", "this username is already attributed"));
+                }
+
+                var emailExists = await _userManager.FindByEmailAsync(request.email);
+                if (emailExists != null)
+                {
+                    return BadRequest(new ResponseBase(false, 400, "email_already_exists", "this email is already attributed to an existing account"));
+                }
+
                 UserValidator userValidator = new UserValidator();
                 var ValidatorResult = userValidator.Validate(request);
                 if(ValidatorResult.IsValid)
@@ -247,7 +274,8 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteMyUser(DeleteMyselfRequest request)
         {
-            _logger.LogInformation($"User : {User.Identity.Name}, route : DELETE /users, callback : Delete(), params : {request}", DateTime.UtcNow.ToLongTimeString());
+            DeleteMyselfRequest loggerRequest = new DeleteMyselfRequest(request.login, "");
+            _logger.LogInformation($"User : {User.Identity.Name}, route : DELETE /users, callback : Delete()", DateTime.UtcNow.ToLongTimeString());
             var user = _userManager.FindByNameAsync(request.login);
             var confirmed = await _userManager.CheckPasswordAsync(await user, request.Password);
             if (confirmed)
@@ -286,7 +314,8 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType( typeof(ResponseBase),StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Login(LoginUserRequest request)
         {
-            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /users/login, callback : Login(), params : {request}", DateTime.UtcNow.ToLongTimeString());
+            LoginUserRequest loggerRequest = new LoginUserRequest(request.login, "");
+            _logger.LogInformation($@"User : {request.login}, route : POST /users/login, callback : Login()", DateTime.UtcNow.ToLongTimeString());
             var model = await _userManager.FindByNameAsync(request.login);
             if(model != null)
             {
@@ -371,7 +400,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(typeof(ResponseBase),StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
         {
-            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /users/forgotPassword, callback : ForgotPassword()", DateTime.UtcNow.ToLongTimeString());
+            _logger.LogInformation($"User : {request.email}, route : POST /users/forgotPassword, callback : ForgotPassword()", DateTime.UtcNow.ToLongTimeString());
             var validator = new ForgotPasswordValidator();
             var ValidatorResult = validator.Validate(request);
             if (ValidatorResult.IsValid)
@@ -381,7 +410,6 @@ namespace PoseidonAPI.Controllers
                 var user = await _userManager.FindByEmailAsync(request.email);
                     if (user != null)
                     {
-                        //TODO add mail sender services, token returned only for tests purposes 
                         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
 
                         var response = await _emailService.sendResetPasswordEmail(token, request.email);
@@ -424,12 +452,6 @@ namespace PoseidonAPI.Controllers
             }
         }
 
-        /*[HttpGet]
-        public IActionResult ResetPassword(string code)
-        {
-            return code == null ? View("Error") : View();
-        }*/
-
         /// <summary>
         /// Reset user password, (token required)
         /// </summary>
@@ -446,10 +468,10 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(typeof(ResponseBase), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(List<ErrorModel>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(List<ResponseBase>), StatusCodes.Status400BadRequest)]
-        [ValidateAntiForgeryToken]
+        //[ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
         {
-            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /users/resetPassword, callback : ResetPassword()8", DateTime.UtcNow.ToLongTimeString());
+            _logger.LogInformation($"User : {request.email}, route : POST /users/resetPassword, callback : ResetPassword()", DateTime.UtcNow.ToLongTimeString());
             var validator = new ResetPasswordValidator();
             var ValidatorResult = validator.Validate(request);
             if (ValidatorResult.IsValid)

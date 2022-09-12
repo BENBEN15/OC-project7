@@ -124,7 +124,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Add(CreateCurvePointRequest request)
         {
-            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /curvePoints, callback : Add(), params : {request}", DateTime.UtcNow.ToLongTimeString());
+            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /curvePoints, callback : Add()", DateTime.UtcNow.ToLongTimeString());
             var curvePointDTO = _mapper.Map<CurvePointDTO>(request);
 
             CurvePointDTOValidator validator = new CurvePointDTOValidator();
@@ -185,7 +185,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Update(int id, UpsertCurvePointRequest curvePoint)
         {
-            _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /curvePoints/{id}, callback : Update(), params : {curvePoint}", DateTime.UtcNow.ToLongTimeString());
+            _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /curvePoints/{id}, callback : Update()", DateTime.UtcNow.ToLongTimeString());
             CurvePointDTO curvePointDTO = _mapper.Map<CurvePointDTO>(curvePoint);
             curvePointDTO.CurvePointId = id;
 

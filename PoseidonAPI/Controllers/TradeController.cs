@@ -139,7 +139,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Add(CreateTradeRequest request)
         {
-            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /trades, callback : Add(), params : {request}", DateTime.UtcNow.ToLongTimeString());
+            _logger.LogInformation($"User : {User.Identity.Name}, route : POST /trades, callback : Add()", DateTime.UtcNow.ToLongTimeString());
             var tradeDTO = _mapper.Map<TradeDTO>(request);
 
             TradeDTOValidator validator = new TradeDTOValidator();
@@ -215,7 +215,7 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Update(int id, UpsertTradeRequest trade)
         {
-            _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /trades/{id}, callback : Update(), params : {trade}", DateTime.UtcNow.ToLongTimeString());
+            _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /trades/{id}, callback : Update()", DateTime.UtcNow.ToLongTimeString());
             TradeDTO tradeDTO = _mapper.Map<TradeDTO>(trade);
             tradeDTO.TradeId = id;
 

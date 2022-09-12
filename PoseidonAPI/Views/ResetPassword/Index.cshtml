@@ -1,38 +1,40 @@
-﻿@model PoseidonAPI.Views.ViewModels.ResetPasswordViewModel
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model PoseidonAPI.Views.ViewModels.ResetPasswordViewModel
 @{
     ViewBag.Title = "Reset password";
 }
 
-<h2></h2>
 
-@using (Html.BeginForm("ResetPassword", "AuthController", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
-{
-    @Html.AntiForgeryToken()
-    <h4>Reset your password.</h4>
-    <hr />
-    @Html.ValidationSummary("", new { @class = "text-danger" })
-    @Html.HiddenFor(model => model.token)
-    <div class="form-group">
-        @Html.LabelFor(m => m.email, new { @class = "col-md-2 control-label" })
-        <div class="col-md-10">
-            @Html.TextBoxFor(m => m.email, new { @class = "form-control" })
-        </div>
+<div class="container">
+    <div class="w-100 d-flex justify-content-center">
+        <form asp-controller="ResetPassword" asp-action="Index" method="post" class="shadow rounded-2 p-5">
+            <h2 class="">Reset password</h2>
+
+            @if(Model.emailError != "")
+            {
+                <p class="text-danger">@Model.emailError</p>
+            }
+            <label for="email" class="form-label">Your email</label>
+            <input type="email" name="Email" asp-for="Email" class="form-control w-100 mb-2" id="email">
+
+            @if(Model.passwordError != "")
+            {
+                <p class="text-danger">@Model.passwordError</p>
+            }
+            <label for="password" class="form-label">Your new password</label>
+            <input type="password" name="newPassword" asp-for="newPassword" class="form-control w-100 mb-2" id="password">
+
+            <label for="confirmPassword" class="form-label">Confirm password</label>
+            <input type="password" name="confirmPassword" asp-for="confirmPassword" class="form-control w-100 mb-5" id="confirmPassword">
+
+            <label for="token" class="visually-hidden"></label>
+            <input type="hidden" name="token" asp-for="token" value="@Model.token" class="visually-hidden" id="token">
+
+            <button type="submit" class="btn btn-primary">Change password</button>
+            @if (Model.isValidated != "")
+            {
+                <p class="text-danger">@Model.isValidated</p>
+            }
+        </form>
     </div>
-    <div class="form-group">
-        @Html.LabelFor(m => m.newPassword, new { @class = "col-md-2 control-label" })
-        <div class="col-md-10">
-            @Html.PasswordFor(m => m.newPassword, new { @class = "form-control" })
-        </div>
-    </div>
-    <div id="confirm_password" class="form-group">
-        @Html.LabelFor(m => m.confirmNewPassword, new { @class = "col-md-2 control-label" })
-        <div class="col-md-10">
-            @Html.PasswordFor(m => m.confirmNewPassword, new { @class = "form-control" })
-        </div>
-    </div>
-    <div class="form-group">
-        <div class="col-md-offset-2 col-md-10">
-            <input type="submit" class="btn btn-default" value="Reset" />
-        </div>
-    </div>
-}
+</div>

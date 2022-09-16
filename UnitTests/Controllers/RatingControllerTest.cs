@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using PoseidonAPI.Contracts.Rating;
 
@@ -32,15 +33,31 @@ namespace UnitTests.Controllers
             return items;
         }
 
+        public ILogger<RatingController> getLogger()
+        {
+            var logger = new Mock<ILogger<RatingController>>();
+            return logger.Object;
+        }
+
+        public DefaultHttpContext getHttpContext()
+        {
+            var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
+            {
+                new Claim(ClaimTypes.Name, "userName"),
+
+            }, "mock"));
+            return new DefaultHttpContext() { User = user };
+        }
+
         [Fact]
         public void Get_All()
         {
             //Arrange
-            var mapper = mapperCreation();
             var moqService = new Mock<IService<RatingDTO>>();
             List<RatingDTO> dtos = seedData();
             moqService.Setup(x => x.GetAll()).Returns(dtos);
-            var controller = new RatingController(moqService.Object, mapper);
+            var controller = new RatingController(moqService.Object, mapperCreation(), getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.GetAll();
@@ -60,11 +77,11 @@ namespace UnitTests.Controllers
         public void Get_valid_id()
         {
             //Arrange
-            var mapper = mapperCreation();
             var moqService = new Mock<IService<RatingDTO>>();
             List<RatingDTO> dtos = seedData();
             moqService.Setup(x => x.Get(dtos[0].RatingId)).Returns(dtos[0]);
-            var controller = new RatingController(moqService.Object, mapper);
+            var controller = new RatingController(moqService.Object, mapperCreation(), getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Get(dtos[0].RatingId);
@@ -84,11 +101,11 @@ namespace UnitTests.Controllers
         public void Get_invalid_id()
         {
             //Arrange
-            var mapper = mapperCreation();
             var moqService = new Mock<IService<RatingDTO>>();
             List<RatingDTO> dtos = seedData();
             moqService.Setup(x => x.Get(dtos[0].RatingId)).Returns(dtos[0]);
-            var controller = new RatingController(moqService.Object, mapper);
+            var controller = new RatingController(moqService.Object, mapperCreation(), getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Get(0);
@@ -110,7 +127,8 @@ namespace UnitTests.Controllers
             List<RatingDTO> dtos = seedData();
             moqService.Setup(x => x.Get(1)).Returns(dtoWithId);
             moqService.Setup(x => x.Save(It.IsAny<RatingDTO>())).Returns(dtoWithId);
-            var controller = new RatingController(moqService.Object, mapper);
+            var controller = new RatingController(moqService.Object, mapper, getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Add(request);
@@ -142,7 +160,8 @@ namespace UnitTests.Controllers
             var moqService = new Mock<IService<RatingDTO>>();
             moqService.Setup(x => x.Update(It.IsAny<RatingDTO>())).Callback<RatingDTO>(x => dtos.Remove(toUpdate));
             moqService.Setup(x => x.Update(It.IsAny<RatingDTO>())).Callback<RatingDTO>(x => dtos.Add(updated));
-            var controller = new RatingController(moqService.Object, mapper);
+            var controller = new RatingController(moqService.Object, mapper, getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Update(id, request);
@@ -163,13 +182,13 @@ namespace UnitTests.Controllers
         public void Delete()
         {
             //Arrange
-            var mapper = mapperCreation();
             var moqService = new Mock<IService<RatingDTO>>();
             List<RatingDTO> dtos = seedData();
             List<RatingDTO> controlDtos = dtos;
             int id = dtos[0].RatingId;
             moqService.Setup(x => x.Delete(It.IsAny<int>())).Callback<int>(i => dtos.Remove(dtos.FirstOrDefault(x => x.RatingId == id)));
-            var controller = new RatingController(moqService.Object, mapper);
+            var controller = new RatingController(moqService.Object, mapperCreation(), getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Delete(id);

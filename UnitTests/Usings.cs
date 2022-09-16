@@ -1,7 +1,9 @@
 global using Xunit;
+global using System.Security.Claims;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.EntityFrameworkCore.Storage;
-global using Microsoft.EntityFrameworkCore.InMemory;
+global using Microsoft.Extensions.Logging;
+global using Microsoft.AspNetCore.Http;
 global using PoseidonAPI.Mappings;
 global using PoseidonAPI.Services;
 global using PoseidonAPI.Repositories;

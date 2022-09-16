@@ -4,19 +4,7 @@ namespace UnitTests.Services
 {
     public class BidServiceTest
     {
-        private IMapper mapperCreation()
-        {
-            var mappingConfig = new MapperConfiguration(mc =>
-            {
-                mc.AddProfile(new MappingProfile());
-            });
-
-            IMapper mapper = mappingConfig.CreateMapper();
-
-            return mapper;
-        }
-
-        private List<Bid> SeedData()
+        /*private List<Bid> SeedData()
         {
             var bids = new List<Bid>{
             new Bid
@@ -97,176 +85,129 @@ namespace UnitTests.Services
         };
 
             return bids;
+        }*/
+
+        private IMapper mapperCreation()
+        {
+            var mappingConfig = new MapperConfiguration(mc =>
+            {
+                mc.AddProfile(new MappingProfile());
+            });
+
+            IMapper mapper = mappingConfig.CreateMapper();
+
+            return mapper;
         }
+
+        public List<Bid> SeedData()
+        {
+            var items = new List<Bid>();
+            Fixture fixture = new Fixture();
+            var item1 = fixture.Create<Bid>();
+            var item2 = fixture.Create<Bid>();
+            var item3 = fixture.Create<Bid>();
+            items.Add(item1);
+            items.Add(item2);
+            items.Add(item3);
+
+            return items;
+        }
+
+        public Mock<IRepository<Bid>> MockRepo()
+        {
+            return new Mock<IRepository<Bid>>();
+        }
+
+        public BidService initService(IRepository<Bid> repo, IMapper mapper)
+        {
+            return new BidService(repo, mapper);
+        }
+
 
         [Fact]
         public void get()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Bid> bids = SeedData();
-            contextMock.Setup(x => x.Bids).ReturnsDbSet(bids);
             var mapper = mapperCreation();
-            BidRepository bidRepository = new BidRepository(contextMock.Object);
-            BidService bidService = new BidService(bidRepository, mapper);
+            List<Bid> data = SeedData();
+            var mockRepo = MockRepo();
+            mockRepo.Setup(x => x.Get(data[0].BidId)).Returns(data[0]);
+            var service = initService(mockRepo.Object, mapper);
 
             //Act
-            int id = 1;
-            var bidResult = JsonConvert.SerializeObject(bidService.Get(id));
-            var bidDto = mapper.Map<BidDTO>(SeedData().FirstOrDefault(x => x.BidId == id));
-            var bid = JsonConvert.SerializeObject(bidDto);
+            var result = service.Get(data[0].BidId);
 
             //Assert
-            Assert.NotNull(bidResult);
-            Assert.Equal(bid, bidResult);
+            var actualJson = JsonConvert.SerializeObject(result);
+            var expected = mapper.Map<BidDTO>(data[0]);
+            var expectedJson = JsonConvert.SerializeObject(expected);
+
+            Assert.NotNull(result);
+            Assert.Equal(expectedJson, actualJson);
         }
 
         [Fact]
         public void getAll()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Bid> bids = SeedData();
-            contextMock.Setup(x => x.Bids).ReturnsDbSet(bids);
             var mapper = mapperCreation();
-            BidRepository bidRepository = new BidRepository(contextMock.Object);
-            BidService bidService = new BidService(bidRepository, mapper);
+            List<Bid> data = SeedData();
+            var mockRepo = MockRepo();
+            mockRepo.Setup(x => x.GetAll()).Returns(data);
+            var service = initService(mockRepo.Object, mapper);
 
             //Act
-            var bidsResult = JsonConvert.SerializeObject(bidService.GetAll());
-            var dtoList = new List<BidDTO>();
-            var bidsDB = contextMock.Object.Bids.Where(b => b.BidId > 0);
-            foreach (Bid bid in bidsDB) { 
-                var dto  = mapper.Map<BidDTO>(bid);
-                dtoList.Add(dto);
-            }
-            var bidlist = JsonConvert.SerializeObject(dtoList);
+            var result = service.GetAll();
 
             //Assert
-            Assert.NotNull(bidsResult);
-            Assert.NotEmpty(bidsResult);
-            Assert.Equal(bidlist, bidsResult);
+            var actualJson = JsonConvert.SerializeObject(result);
+            var expectedJson = JsonConvert.SerializeObject(data);
+            
+            Assert.NotNull(result);
+            Assert.NotEmpty(result);
+            Assert.Equal(expectedJson, actualJson);
         }
 
-        [Fact]
-        public void save()
+        [Theory, AutoData]
+        public void save(BidDTO dto)
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Bid> bids = SeedData();
-            contextMock.Setup(x => x.Bids).ReturnsDbSet(bids);
-            contextMock.Setup(m => m.Add(It.IsAny<Bid>())).Callback<Bid>(bids.Add);
             var mapper = mapperCreation();
-            BidRepository bidRepository = new BidRepository(contextMock.Object);
-            BidService bidService = new BidService(bidRepository, mapper);
+            List<Bid> data = SeedData();
+            var repoReturn = mapper.Map<Bid>(dto);
+            var mockRepo = MockRepo();
+            mockRepo.Setup(x => x.Save(It.IsAny<Bid>())).Callback<Bid>(x => data.Add(repoReturn)).Returns(repoReturn);
+            var service = initService(mockRepo.Object, mapper);
 
             //Act
-            int idToGet = 4;
-            BidDTO bidToAdd = new BidDTO
-            {
-                BidId = idToGet,
-                Account = "account4",
-                Type = "type4",
-                BidQuantity = 1.0,
-                AskQuantity = 1.0,
-                BidValue = 1.0,
-                Ask = 1.0,
-                Benchmark = "benchmark4",
-                BidDate = new DateTime(2022, 01, 01),
-                Commentary = "commentary4",
-                Security = "securoty4",
-                Status = "status4",
-                Trader = "trader4",
-                Book = "book4",
-                CreationName = "creationName4",
-                CreationDate = new DateTime(2022, 01, 01),
-                RevisionName = "revisionName4",
-                RevisionDate = new DateTime(2022, 01, 01),
-                DealName = "dealName4",
-                DealType = "dealType4",
-                SourceListId = "SourceListId4",
-                Side = "side4",
-            };
-
-            BidDTO bidResponse = bidService.Save(bidToAdd);
-            BidDTO bidsResult = mapper.Map<BidDTO>(contextMock.Object.Bids.FirstOrDefault(x => x.BidId == idToGet));
-
-            IEnumerable<Bid> bidlist = contextMock.Object.Bids.Where(b => b.BidId > 0);
-
-            var bidToAddJson = JsonConvert.SerializeObject(bidToAdd);
-            var bidResponseJson = JsonConvert.SerializeObject(bidResponse);
-            var bidsResultJson = JsonConvert.SerializeObject(bidsResult);
+            var result = service.Save(dto);
 
             //Assert
-            Assert.NotNull(bidsResult);
-            Assert.NotEmpty(bidlist);
-            Assert.Equal(4, bidlist.Count());
-            Assert.Equal(bidToAddJson, bidsResultJson);
-            Assert.Equal(bidsResultJson, bidResponseJson);
+            var actualJson = JsonConvert.SerializeObject(result);
+            var expectedJson = JsonConvert.SerializeObject(dto);
+
+            Assert.NotNull(result);
+            Assert.NotEmpty(data);
+            Assert.Equal(4, data.Count());
+            Assert.Equal(expectedJson, actualJson);
         }
 
-        [Fact]
-        public void update()
+        [Theory, AutoData]
+        public void update(BidDTO dto)
         {
             //Arrange
-            var options = new DbContextOptionsBuilder<PoseidonDBContext>()
-                .UseInMemoryDatabase("BidRepoUpdate" + Guid.NewGuid().ToString(), new InMemoryDatabaseRoot())
-                .Options;
+            var mapper = mapperCreation();
+            List<Bid> data = SeedData();
+            var mockRepo = MockRepo();
+            mockRepo.Setup(x => x.Update(It.IsAny<Bid>()));
+            var service = initService(mockRepo.Object, mapper);
 
-            using (var context = new PoseidonDBContext(options))
-            {
-                context.Database.EnsureDeleted();
-                context.Database.EnsureCreated();
+            //Act
+            service.Update(dto);
+            mockRepo.Verify(mock => mock.Update(It.IsAny<Bid>()), Times.Once());
+            //mockRepo.
 
-                foreach (var b in SeedData())
-                {
-                    context.Bids.Add(b);
-                }
-                context.SaveChanges();
-            }
-
-            using (var context = new PoseidonDBContext(options))
-            {
-                var mapper = mapperCreation();
-                BidRepository bidRepository = new BidRepository(context);
-                BidService bidService = new BidService(bidRepository, mapper);
-
-                BidDTO bidToUpdate = new BidDTO
-                {
-                    BidId = 1,
-                    Account = "NEWaccount1",
-                    Type = "NEWtype1",
-                    BidQuantity = 2.0,
-                    AskQuantity = 2.0,
-                    BidValue = 2.0,
-                    Ask = 2.0,
-                    Benchmark = "NEWbenchmark1",
-                    BidDate = new DateTime(2023, 01, 01),
-                    Commentary = "NEWcommentary1",
-                    Security = "NEWsecuroty1",
-                    Status = "NEWstatus1",
-                    Trader = "NEWtrader1",
-                    Book = "NEWbook1",
-                    CreationName = "NEWcreationName1",
-                    CreationDate = new DateTime(2023, 01, 01),
-                    RevisionName = "NEWrevisionName1",
-                    RevisionDate = new DateTime(2023, 01, 01),
-                    DealName = "NEWdealName1",
-                    DealType = "NEWdealType1",
-                    SourceListId = "NEWSourceListId1",
-                    Side = "NEWside1",
-                };
-
-                //Act
-                bidService.Update(bidToUpdate);
-                BidDTO bidsResult = mapper.Map<BidDTO>(context.Bids.FirstOrDefault(x => x.BidId == bidToUpdate.BidId));
-                var bidToUpdateJson = JsonConvert.SerializeObject(bidToUpdate);
-                var bidResultJson = JsonConvert.SerializeObject(bidsResult);
-
-                //Assert
-                Assert.NotNull(bidsResult);
-                Assert.Equal(bidToUpdateJson, bidResultJson);
-            }
+            //Assert
         }
 
         [Fact]

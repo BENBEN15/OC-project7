@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using PoseidonAPI.Contracts.CurvePoint;
 
@@ -32,15 +33,31 @@ namespace UnitTests.Controllers
             return items;
         }
 
+        public ILogger<CurvePointsController> getLogger()
+        {
+            var logger = new Mock<ILogger<CurvePointsController>>();
+            return logger.Object;
+        }
+
+        public DefaultHttpContext getHttpContext()
+        {
+            var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
+            {
+                new Claim(ClaimTypes.Name, "userName"),
+
+            }, "mock"));
+            return new DefaultHttpContext() { User = user };
+        }
+
         [Fact]
         public void Get_All()
         {
             //Arrange
-            var mapper = mapperCreation();
             var moqService = new Mock<IService<CurvePointDTO>>();
             List<CurvePointDTO> dtos = seedData();
             moqService.Setup(x => x.GetAll()).Returns(dtos);
-            var controller = new CurvePointsController(moqService.Object, mapper);
+            var controller = new CurvePointsController(moqService.Object, mapperCreation(), getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.GetAll();
@@ -60,11 +77,11 @@ namespace UnitTests.Controllers
         public void Get_valid_id()
         {
             //Arrange
-            var mapper = mapperCreation();
             var moqService = new Mock<IService<CurvePointDTO>>();
             List<CurvePointDTO> dtos = seedData();
             moqService.Setup(x => x.Get(dtos[0].CurvePointId)).Returns(dtos[0]);
-            var controller = new CurvePointsController(moqService.Object, mapper);
+            var controller = new CurvePointsController(moqService.Object, mapperCreation(), getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Get(dtos[0].CurvePointId);
@@ -84,11 +101,11 @@ namespace UnitTests.Controllers
         public void Get_invalid_id()
         {
             //Arrange
-            var mapper = mapperCreation();
             var moqService = new Mock<IService<CurvePointDTO>>();
             List<CurvePointDTO> dtos = seedData();
             moqService.Setup(x => x.Get(dtos[0].CurvePointId)).Returns(dtos[0]);
-            var controller = new CurvePointsController(moqService.Object, mapper);
+            var controller = new CurvePointsController(moqService.Object, mapperCreation(), getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Get(0);
@@ -110,7 +127,8 @@ namespace UnitTests.Controllers
             List<CurvePointDTO> dtos = seedData();
             moqService.Setup(x => x.Get(1)).Returns(dtoWithId);
             moqService.Setup(x => x.Save(It.IsAny<CurvePointDTO>())).Returns(dtoWithId);
-            var controller = new CurvePointsController(moqService.Object, mapper);
+            var controller = new CurvePointsController(moqService.Object, mapper, getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Add(request);
@@ -142,7 +160,9 @@ namespace UnitTests.Controllers
             var moqService = new Mock<IService<CurvePointDTO>>();
             moqService.Setup(x => x.Update(It.IsAny<CurvePointDTO>())).Callback<CurvePointDTO>(x => dtos.Remove(toUpdate));
             moqService.Setup(x => x.Update(It.IsAny<CurvePointDTO>())).Callback<CurvePointDTO>(x => dtos.Add(updated));
-            var controller = new CurvePointsController(moqService.Object, mapper);
+            var loggerMoq = new Mock<ILogger<CurvePointsController>>();
+            var controller = new CurvePointsController(moqService.Object, mapper, getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Update(id, request);
@@ -163,13 +183,13 @@ namespace UnitTests.Controllers
         public void Delete()
         {
             //Arrange
-            var mapper = mapperCreation();
             var moqService = new Mock<IService<CurvePointDTO>>();
             List<CurvePointDTO> dtos = seedData();
             List<CurvePointDTO> controlDtos = dtos;
             int id = dtos[0].CurvePointId;
             moqService.Setup(x => x.Delete(It.IsAny<int>())).Callback<int>(i => dtos.Remove(dtos.FirstOrDefault(x => x.CurvePointId == id)));
-            var controller = new CurvePointsController(moqService.Object, mapper);
+            var controller = new CurvePointsController(moqService.Object, mapperCreation(), getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Delete(id);

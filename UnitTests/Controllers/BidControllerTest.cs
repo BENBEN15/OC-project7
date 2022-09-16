@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PoseidonAPI.Contracts.Bid;
 
+
 namespace UnitTests.Controllers
 {
     public class BidControllerTest
@@ -32,15 +33,31 @@ namespace UnitTests.Controllers
             return items;
         }
 
+        public ILogger<BidsController> getLogger()
+        {
+            var logger = new Mock<ILogger<BidsController>>();
+            return logger.Object;
+        }
+
+        public DefaultHttpContext getHttpContext()
+        {
+            var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
+            {
+                new Claim(ClaimTypes.Name, "userName"),
+
+            }, "mock"));
+            return new DefaultHttpContext() { User = user };
+        }
+
         [Fact]
         public void Get_All()
         {
             //Arrange
-            var mapper = mapperCreation();
-            var moqService = new Mock<IService<BidDTO>>();
             List<BidDTO> dtos = seedData();
+            var moqService = new Mock<IService<BidDTO>>();
             moqService.Setup(x => x.GetAll()).Returns(dtos);
-            var controller = new BidsController(moqService.Object, mapper);
+            var controller = new BidsController(moqService.Object, mapperCreation(), getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.GetAll();
@@ -60,11 +77,11 @@ namespace UnitTests.Controllers
         public void Get_valid_id()
         {
             //Arrange
-            var mapper = mapperCreation();
             var moqService = new Mock<IService<BidDTO>>();
             List<BidDTO> dtos = seedData();
             moqService.Setup(x => x.Get(dtos[0].BidId)).Returns(dtos[0]);
-            var controller = new BidsController(moqService.Object, mapper);
+            var controller = new BidsController(moqService.Object, mapperCreation(), getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Get(dtos[0].BidId);
@@ -84,11 +101,11 @@ namespace UnitTests.Controllers
         public void Get_invalid_id()
         {
             //Arrange
-            var mapper = mapperCreation();
             var moqService = new Mock<IService<BidDTO>>();
             List<BidDTO> dtos = seedData();
             moqService.Setup(x => x.Get(dtos[0].BidId)).Returns(dtos[0]);
-            var controller = new BidsController(moqService.Object, mapper);
+            var controller = new BidsController(moqService.Object, mapperCreation(), getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Get(0);
@@ -107,10 +124,11 @@ namespace UnitTests.Controllers
             var dto = mapper.Map<BidDTO>(request);
             var dtoWithId = mapper.Map<BidDTO>(request);
             var moqService = new Mock<IService<BidDTO>>();
-            List<BidDTO> dtos = seedData();
+            //List<BidDTO> dtos = seedData();
             moqService.Setup(x => x.Get(1)).Returns(dtoWithId);
             moqService.Setup(x => x.Save(It.IsAny<BidDTO>())).Returns(dtoWithId);
-            var controller = new BidsController(moqService.Object, mapper);
+            var controller = new BidsController(moqService.Object, mapper, getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Add(request);
@@ -142,7 +160,8 @@ namespace UnitTests.Controllers
             var moqService = new Mock<IService<BidDTO>>();
             moqService.Setup(x => x.Update(It.IsAny<BidDTO>())).Callback<BidDTO>(x => dtos.Remove(toUpdate));
             moqService.Setup(x => x.Update(It.IsAny<BidDTO>())).Callback<BidDTO>(x => dtos.Add(updated));
-            var controller = new BidsController(moqService.Object, mapper);
+            var controller = new BidsController(moqService.Object, mapper, getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Update(id,request);
@@ -163,13 +182,13 @@ namespace UnitTests.Controllers
         public void Delete()
         {
             //Arrange
-            var mapper = mapperCreation();
             var moqService = new Mock<IService<BidDTO>>();
             List<BidDTO> dtos = seedData();
             List<BidDTO> controlDtos = dtos;
             int id = dtos[0].BidId;
             moqService.Setup(x => x.Delete(It.IsAny<int>())).Callback<int>(i => dtos.Remove(dtos.FirstOrDefault(x => x.BidId == id)));
-            var controller = new BidsController(moqService.Object, mapper);
+            var controller = new BidsController(moqService.Object, mapperCreation(), getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Delete(id);

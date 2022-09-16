@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using PoseidonAPI.Contracts.Trade;
 
@@ -31,16 +32,31 @@ namespace UnitTests.Controllers
 
             return items;
         }
+        public ILogger<TradeController> getLogger()
+        {
+            var logger = new Mock<ILogger<TradeController>>();
+            return logger.Object;
+        }
+
+        public DefaultHttpContext getHttpContext()
+        {
+            var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
+            {
+                new Claim(ClaimTypes.Name, "userName"),
+
+            }, "mock"));
+            return new DefaultHttpContext() { User = user };
+        }
 
         [Fact]
         public void Get_All()
         {
             //Arrange
-            var mapper = mapperCreation();
             var moqService = new Mock<IService<TradeDTO>>();
             List<TradeDTO> dtos = seedData();
             moqService.Setup(x => x.GetAll()).Returns(dtos);
-            var controller = new TradeController(moqService.Object, mapper);
+            var controller = new TradeController(moqService.Object, mapperCreation(), getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.GetAll();
@@ -60,11 +76,11 @@ namespace UnitTests.Controllers
         public void Get_valid_id()
         {
             //Arrange
-            var mapper = mapperCreation();
             var moqService = new Mock<IService<TradeDTO>>();
             List<TradeDTO> dtos = seedData();
             moqService.Setup(x => x.Get(dtos[0].TradeId)).Returns(dtos[0]);
-            var controller = new TradeController(moqService.Object, mapper);
+            var controller = new TradeController(moqService.Object, mapperCreation(), getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Get(dtos[0].TradeId);
@@ -84,11 +100,11 @@ namespace UnitTests.Controllers
         public void Get_invalid_id()
         {
             //Arrange
-            var mapper = mapperCreation();
             var moqService = new Mock<IService<TradeDTO>>();
             List<TradeDTO> dtos = seedData();
             moqService.Setup(x => x.Get(dtos[0].TradeId)).Returns(dtos[0]);
-            var controller = new TradeController(moqService.Object, mapper);
+            var controller = new TradeController(moqService.Object, mapperCreation(), getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Get(0);
@@ -110,7 +126,8 @@ namespace UnitTests.Controllers
             List<TradeDTO> dtos = seedData();
             moqService.Setup(x => x.Get(1)).Returns(dtoWithId);
             moqService.Setup(x => x.Save(It.IsAny<TradeDTO>())).Returns(dtoWithId);
-            var controller = new TradeController(moqService.Object, mapper);
+            var controller = new TradeController(moqService.Object, mapper, getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Add(request);
@@ -142,7 +159,8 @@ namespace UnitTests.Controllers
             var moqService = new Mock<IService<TradeDTO>>();
             moqService.Setup(x => x.Update(It.IsAny<TradeDTO>())).Callback<TradeDTO>(x => dtos.Remove(toUpdate));
             moqService.Setup(x => x.Update(It.IsAny<TradeDTO>())).Callback<TradeDTO>(x => dtos.Add(updated));
-            var controller = new TradeController(moqService.Object, mapper);
+            var controller = new TradeController(moqService.Object, mapper, getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Update(id, request);
@@ -163,13 +181,13 @@ namespace UnitTests.Controllers
         public void Delete()
         {
             //Arrange
-            var mapper = mapperCreation();
             var moqService = new Mock<IService<TradeDTO>>();
             List<TradeDTO> dtos = seedData();
             List<TradeDTO> controlDtos = dtos;
             int id = dtos[0].TradeId;
             moqService.Setup(x => x.Delete(It.IsAny<int>())).Callback<int>(i => dtos.Remove(dtos.FirstOrDefault(x => x.TradeId == id)));
-            var controller = new TradeController(moqService.Object, mapper);
+            var controller = new TradeController(moqService.Object, mapperCreation(), getLogger());
+            controller.ControllerContext.HttpContext = getHttpContext();
 
             //Act
             var actionResult = controller.Delete(id);

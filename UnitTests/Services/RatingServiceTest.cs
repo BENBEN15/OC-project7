@@ -15,198 +15,131 @@ namespace UnitTests.Services
 
             return mapper;
         }
-
-        private List<Rating> SeedData()
+        public List<Rating> SeedData()
         {
-            var ratings = new List<Rating>{
-                new Rating
-                {
-                    RatingId = 1,
-                    FitchRating = "fitchRating1",
-                    MoodysRating = "MoodyRating1",
-                    OrderNumber = 1,
-                    SandPrating = "sandPrating1",
-                },
-                new Rating
-                {
-                    RatingId = 2,
-                    FitchRating = "fitchRating2",
-                    MoodysRating = "MoodyRating2",
-                    OrderNumber = 2,
-                    SandPrating = "sandPrating2",
-                },
-                new Rating
-                {
-                    RatingId = 3,
-                    FitchRating = "fitchRating3",
-                    MoodysRating = "MoodyRating3",
-                    OrderNumber = 3,
-                    SandPrating = "sandPrating3",
-                },
-            };
-            return ratings;
+            var items = new List<Rating>();
+            Fixture fixture = new Fixture();
+            var item1 = fixture.Create<Rating>();
+            var item2 = fixture.Create<Rating>();
+            var item3 = fixture.Create<Rating>();
+            items.Add(item1);
+            items.Add(item2);
+            items.Add(item3);
+
+            return items;
+        }
+
+        public Mock<IRepository<Rating>> MockRepo()
+        {
+            return new Mock<IRepository<Rating>>();
+        }
+
+        public RatingService initService(IRepository<Rating> repo, IMapper mapper)
+        {
+            return new RatingService(repo, mapper);
         }
 
         [Fact]
         public void get()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Rating> ratings = SeedData();
-            contextMock.Setup(x => x.Ratings).ReturnsDbSet(ratings);
             var mapper = mapperCreation();
-            RatingRepository ratingRepository = new RatingRepository(contextMock.Object);
-            RatingService ratingService = new RatingService(ratingRepository, mapper);
+            List<Rating> data = SeedData();
+            var mockRepo = MockRepo();
+            mockRepo.Setup(x => x.Get(data[0].RatingId)).Returns(data[0]);
+            var service = initService(mockRepo.Object, mapper);
 
             //Act
-            int id = 1;
-            var ratingResult = JsonConvert.SerializeObject(ratingService.Get(id));
-            var ratingDto = mapper.Map<RatingDTO>(SeedData().FirstOrDefault(x => x.RatingId == id));
-            var rating = JsonConvert.SerializeObject(ratingDto);
+            var result = service.Get(data[0].RatingId);
 
             //Assert
-            Assert.NotNull(ratingResult);
-            Assert.Equal(rating, ratingResult);
+            var actualJson = JsonConvert.SerializeObject(result);
+            var expected = mapper.Map<RatingDTO>(data[0]);
+            var expectedJson = JsonConvert.SerializeObject(expected);
+
+            Assert.NotNull(result);
+            Assert.Equal(expectedJson, actualJson);
         }
 
         [Fact]
         public void getAll()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Rating> ratings = SeedData();
-            contextMock.Setup(x => x.Ratings).ReturnsDbSet(ratings);
             var mapper = mapperCreation();
-            RatingRepository ratingRepository = new RatingRepository(contextMock.Object);
-            RatingService ratingService = new RatingService(ratingRepository, mapper);
+            List<Rating> data = SeedData();
+            var mockRepo = MockRepo();
+            mockRepo.Setup(x => x.GetAll()).Returns(data);
+            var service = initService(mockRepo.Object, mapper);
 
             //Act
-            var ratingResult = JsonConvert.SerializeObject(ratingService.GetAll());
-            var dtoList = new List<RatingDTO>();
-            var ratingsDB = contextMock.Object.Ratings.Where(b => b.RatingId > 0);
-            foreach (Rating rating in ratingsDB)
-            {
-                var dto = mapper.Map<RatingDTO>(rating);
-                dtoList.Add(dto);
-            }
-            var ratinglist = JsonConvert.SerializeObject(dtoList);
+            var result = service.GetAll();
 
             //Assert
-            Assert.NotNull(ratingResult);
-            Assert.NotEmpty(ratingResult);
-            Assert.Equal(ratinglist, ratingResult);
+            var actualJson = JsonConvert.SerializeObject(result);
+            var expectedJson = JsonConvert.SerializeObject(data);
+
+            Assert.NotNull(result);
+            Assert.NotEmpty(result);
+            Assert.Equal(expectedJson, actualJson);
         }
 
-        [Fact]
-        public void save()
+        [Theory, AutoData]
+        public void save(RatingDTO dto)
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Rating> ratings = SeedData();
-            contextMock.Setup(x => x.Ratings).ReturnsDbSet(ratings);
-            contextMock.Setup(m => m.Add(It.IsAny<Rating>())).Callback<Rating>(ratings.Add);
             var mapper = mapperCreation();
-            RatingRepository ratingRepository = new RatingRepository(contextMock.Object);
-            RatingService ratingService = new RatingService(ratingRepository, mapper);
-            
+            List<Rating> data = SeedData();
+            var repoReturn = mapper.Map<Rating>(dto);
+            var mockRepo = MockRepo();
+            mockRepo.Setup(x => x.Save(It.IsAny<Rating>())).Callback<Rating>(x => data.Add(repoReturn)).Returns(repoReturn);
+            var service = initService(mockRepo.Object, mapper);
+
             //Act
-            int idToGet = 4;
-            RatingDTO ratingToAdd = new RatingDTO
-            {
-                RatingId = idToGet,
-                FitchRating = "fitchRating4",
-                MoodysRating = "MoodyRating4",
-                OrderNumber = 4,
-                SandPrating = "sandPrating4",
-            };
-
-            RatingDTO ratingResponse = ratingService.Save(ratingToAdd);
-            RatingDTO ratingResult = mapper.Map<RatingDTO>(contextMock.Object.Ratings.FirstOrDefault(x => x.RatingId == idToGet));
-
-            IEnumerable<Rating> ratinglist = contextMock.Object.Ratings.Where(b => b.RatingId > 0);
-
-            var ratingToAddJson = JsonConvert.SerializeObject(ratingToAdd);
-            var ratingResponseJson = JsonConvert.SerializeObject(ratingResponse);
-            var ratingsResultJson = JsonConvert.SerializeObject(ratingResult);
+            var result = service.Save(dto);
 
             //Assert
-            Assert.NotNull(ratingResult);
-            Assert.NotEmpty(ratinglist);
-            Assert.Equal(4, ratinglist.Count());
-            Assert.Equal(ratingToAddJson, ratingsResultJson);
-            Assert.Equal(ratingsResultJson, ratingResponseJson);
+            var actualJson = JsonConvert.SerializeObject(result);
+            var expectedJson = JsonConvert.SerializeObject(dto);
+
+            Assert.NotNull(result);
+            Assert.NotEmpty(data);
+            Assert.Equal(4, data.Count());
+            Assert.Equal(expectedJson, actualJson);
         }
 
-        [Fact]
-        public void update()
+        [Theory, AutoData]
+        public void update(RatingDTO dto)
         {
             //Arrange
-            var options = new DbContextOptionsBuilder<PoseidonDBContext>()
-                .UseInMemoryDatabase("BidRepoUpdate" + Guid.NewGuid().ToString(), new InMemoryDatabaseRoot())
-                .Options;
+            var mapper = mapperCreation();
+            List<Rating> data = SeedData();
+            var mockRepo = MockRepo();
+            mockRepo.Setup(x => x.Update(It.IsAny<Rating>()));
+            var service = initService(mockRepo.Object, mapper);
 
-            using (var context = new PoseidonDBContext(options))
-            {
-                context.Database.EnsureDeleted();
-                context.Database.EnsureCreated();
+            //Act
+            service.Update(dto);
 
-                foreach (var b in SeedData())
-                {
-                    context.Ratings.Add(b);
-                }
-                context.SaveChanges();
-            }
-
-            using (var context = new PoseidonDBContext(options))
-            {
-                var mapper = mapperCreation();
-                RatingRepository ratingRepository = new RatingRepository(context);
-                RatingService ratingService = new RatingService(ratingRepository, mapper);
-
-                RatingDTO ratingToUpdate = new RatingDTO
-                {
-                    RatingId = 1,
-                    FitchRating = "fitchRating5",
-                    MoodysRating = "MoodyRatin51",
-                    OrderNumber = 5,
-                    SandPrating = "sandPrating5",
-                };
-
-                //Act
-                ratingService.Update(ratingToUpdate);
-                RatingDTO ratingsResult = mapper.Map<RatingDTO>(context.Ratings.FirstOrDefault(x => x.RatingId == ratingToUpdate.RatingId));
-                var curvePointToUpdateJson = JsonConvert.SerializeObject(ratingToUpdate);
-                var curvePointResultJson = JsonConvert.SerializeObject(ratingsResult);
-
-                //Assert
-                Assert.NotNull(ratingsResult);
-                Assert.Equal(curvePointToUpdateJson, curvePointResultJson);
-            }
+            //Assert
+            mockRepo.Verify(mock => mock.Update(It.IsAny<Rating>()), Times.Once());
         }
 
         [Fact]
         public void delete()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Rating> ratings = SeedData();
-            contextMock.Setup(x => x.Ratings).ReturnsDbSet(ratings);
-            contextMock.Setup(m => m.Remove(It.IsAny<Rating>())).Callback<Rating>(b => ratings.Remove(b));
             var mapper = mapperCreation();
-            RatingRepository ratingRepository = new RatingRepository(contextMock.Object);
-            RatingService ratingService = new RatingService(ratingRepository, mapper);
+            List<Rating> data = SeedData();
+            var mockRepo = MockRepo();
+            mockRepo.Setup(x => x.Delete(It.IsAny<int>()));
+            var service = initService(mockRepo.Object, mapper);
 
             //Act
-            int idToDelete = 1;
-            ratingService.Delete(idToDelete);
-
-            Rating ratingResult = contextMock.Object.Ratings.FirstOrDefault(x => x.RatingId == idToDelete);
-            IEnumerable<Rating> ratinglist = contextMock.Object.Ratings.Where(x => x.RatingId > 0);
+            int idToDelete = data[0].RatingId;
+            service.Delete(idToDelete);
 
             //Assert
-            Assert.Null(ratingResult);
-            Assert.NotEmpty(ratinglist);
-            Assert.Equal(2, ratinglist.Count());
+            mockRepo.Verify(mock => mock.Delete(It.IsAny<int>()));
         }
     }
 }

@@ -15,204 +15,131 @@ namespace UnitTests.Services
 
             return mapper;
         }
-
-        private List<CurvePoint> SeedData()
+        public List<CurvePoint> SeedData()
         {
-            var curvepoints = new List<CurvePoint>{
-            new CurvePoint
-            {
-                CurvePointId = 1,
-                CurveId = 2,
-                AsOfDate = new DateTime(2022,01,01),
-                CreationDate = new DateTime(2022,01,01),
-                Term = 1.0,
-                Value = 1.0,
-            },
-            new CurvePoint
-            {
-                CurvePointId = 2,
-                CurveId = 3,
-                AsOfDate = new DateTime(2022,02,02),
-                CreationDate = new DateTime(2022,02,02),
-                Term = 2.0,
-                Value = 2.0,
-            },
-            new CurvePoint
-            {
-                CurvePointId = 3,
-                CurveId = 4,
-                AsOfDate = new DateTime(2022,03,03),
-                CreationDate = new DateTime(2022,03,03),
-                Term = 3.0,
-                Value = 3.0,
-            },
-        };
+            var items = new List<CurvePoint>();
+            Fixture fixture = new Fixture();
+            var item1 = fixture.Create<CurvePoint>();
+            var item2 = fixture.Create<CurvePoint>();
+            var item3 = fixture.Create<CurvePoint>();
+            items.Add(item1);
+            items.Add(item2);
+            items.Add(item3);
 
-            return curvepoints;
+            return items;
+        }
+
+        public Mock<IRepository<CurvePoint>> MockRepo()
+        {
+            return new Mock<IRepository<CurvePoint>>();
+        }
+
+        public CurvePointService initService(IRepository<CurvePoint> repo, IMapper mapper)
+        {
+            return new CurvePointService(repo, mapper);
         }
 
         [Fact]
         public void get()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<CurvePoint> curvePoints = SeedData();
-            contextMock.Setup(x => x.CurvePoints).ReturnsDbSet(curvePoints);
             var mapper = mapperCreation();
-            CurvePointRepository curvePointRepository = new CurvePointRepository(contextMock.Object);
-            CurvePointService curvePointService = new CurvePointService(curvePointRepository, mapper);
+            List<CurvePoint> data = SeedData();
+            var mockRepo = MockRepo();
+            mockRepo.Setup(x => x.Get(data[0].CurvePointId)).Returns(data[0]);
+            var service = initService(mockRepo.Object, mapper);
 
             //Act
-            int id = 1;
-            var curvePointResult = JsonConvert.SerializeObject(curvePointService.Get(id));
-            var curvePointDto = mapper.Map<CurvePointDTO>(SeedData().FirstOrDefault(x => x.CurvePointId == id));
-            var curvePoint = JsonConvert.SerializeObject(curvePointDto);
+            var result = service.Get(data[0].CurvePointId);
 
             //Assert
-            Assert.NotNull(curvePointResult);
-            Assert.Equal(curvePoint, curvePointResult);
+            var actualJson = JsonConvert.SerializeObject(result);
+            var expected = mapper.Map<CurvePointDTO>(data[0]);
+            var expectedJson = JsonConvert.SerializeObject(expected);
+
+            Assert.NotNull(result);
+            Assert.Equal(expectedJson, actualJson);
         }
 
         [Fact]
         public void getAll()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<CurvePoint> curvePoints = SeedData();
-            contextMock.Setup(x => x.CurvePoints).ReturnsDbSet(curvePoints);
             var mapper = mapperCreation();
-            CurvePointRepository curvePointRepository = new CurvePointRepository(contextMock.Object);
-            CurvePointService curvePointService = new CurvePointService(curvePointRepository, mapper);
+            List<CurvePoint> data = SeedData();
+            var mockRepo = MockRepo();
+            mockRepo.Setup(x => x.GetAll()).Returns(data);
+            var service = initService(mockRepo.Object, mapper);
 
             //Act
-            var curvePointResult = JsonConvert.SerializeObject(curvePointService.GetAll());
-            var dtoList = new List<CurvePointDTO>();
-            var curvePointsDB = contextMock.Object.CurvePoints.Where(b => b.CurvePointId > 0);
-            foreach (CurvePoint curvePoint in curvePointsDB)
-            {
-                var dto = mapper.Map<CurvePointDTO>(curvePoint);
-                dtoList.Add(dto);
-            }
-            var curvePointlist = JsonConvert.SerializeObject(dtoList);
+            var result = service.GetAll();
 
             //Assert
-            Assert.NotNull(curvePointResult);
-            Assert.NotEmpty(curvePointResult);
-            Assert.Equal(curvePointlist, curvePointResult);
+            var actualJson = JsonConvert.SerializeObject(result);
+            var expectedJson = JsonConvert.SerializeObject(data);
+
+            Assert.NotNull(result);
+            Assert.NotEmpty(result);
+            Assert.Equal(expectedJson, actualJson);
         }
 
-        [Fact]
-        public void save()
+        [Theory, AutoData]
+        public void save(CurvePointDTO dto)
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<CurvePoint> curvePoints = SeedData();
-            contextMock.Setup(x => x.CurvePoints).ReturnsDbSet(curvePoints);
-            contextMock.Setup(m => m.Add(It.IsAny<CurvePoint>())).Callback<CurvePoint>(curvePoints.Add);
             var mapper = mapperCreation();
-            CurvePointRepository curvePointRepository = new CurvePointRepository(contextMock.Object);
-            CurvePointService curvePointService = new CurvePointService(curvePointRepository, mapper);
+            List<CurvePoint> data = SeedData();
+            var repoReturn = mapper.Map<CurvePoint>(dto);
+            var mockRepo = MockRepo();
+            mockRepo.Setup(x => x.Save(It.IsAny<CurvePoint>())).Callback<CurvePoint>(x => data.Add(repoReturn)).Returns(repoReturn);
+            var service = initService(mockRepo.Object, mapper);
 
             //Act
-            int idToGet = 4;
-            CurvePointDTO curvePointToAdd = new CurvePointDTO
-            {
-                CurvePointId = idToGet,
-                CurveId = 5,
-                AsOfDate = new DateTime(2022, 04, 04),
-                CreationDate = new DateTime(2022, 04, 04),
-                Term = 4.0,
-                Value = 4.0,
-            };
-
-            CurvePointDTO curvePointResponse = curvePointService.Save(curvePointToAdd);
-            CurvePointDTO curvePointResult = mapper.Map<CurvePointDTO>(contextMock.Object.CurvePoints.FirstOrDefault(x => x.CurvePointId == idToGet));
-
-            IEnumerable<CurvePoint> curvePointlist = contextMock.Object.CurvePoints.Where(b => b.CurvePointId > 0);
-
-            var curvePointToAddJson = JsonConvert.SerializeObject(curvePointToAdd);
-            var curvePointResponseJson = JsonConvert.SerializeObject(curvePointResponse);
-            var curvePointsResultJson = JsonConvert.SerializeObject(curvePointResult);
+            var result = service.Save(dto);
 
             //Assert
-            Assert.NotNull(curvePointResult);
-            Assert.NotEmpty(curvePointlist);
-            Assert.Equal(4, curvePointlist.Count());
-            Assert.Equal(curvePointToAddJson, curvePointsResultJson);
-            Assert.Equal(curvePointsResultJson, curvePointResponseJson);
+            var actualJson = JsonConvert.SerializeObject(result);
+            var expectedJson = JsonConvert.SerializeObject(dto);
+
+            Assert.NotNull(result);
+            Assert.NotEmpty(data);
+            Assert.Equal(4, data.Count());
+            Assert.Equal(expectedJson, actualJson);
         }
 
-        [Fact]
-        public void update()
+        [Theory, AutoData]
+        public void update(CurvePointDTO dto)
         {
             //Arrange
-            var options = new DbContextOptionsBuilder<PoseidonDBContext>()
-                .UseInMemoryDatabase("BidRepoUpdate" + Guid.NewGuid().ToString(), new InMemoryDatabaseRoot())
-                .Options;
+            var mapper = mapperCreation();
+            List<CurvePoint> data = SeedData();
+            var mockRepo = MockRepo();
+            mockRepo.Setup(x => x.Update(It.IsAny<CurvePoint>()));
+            var service = initService(mockRepo.Object, mapper);
 
-            using (var context = new PoseidonDBContext(options))
-            {
-                context.Database.EnsureDeleted();
-                context.Database.EnsureCreated();
+            //Act
+            service.Update(dto);
 
-                foreach (var b in SeedData())
-                {
-                    context.CurvePoints.Add(b);
-                }
-                context.SaveChanges();
-            }
-
-            using (var context = new PoseidonDBContext(options))
-            {
-                var mapper = mapperCreation();
-                CurvePointRepository curvePointbidRepository = new CurvePointRepository(context);
-                CurvePointService curvePointService = new CurvePointService(curvePointbidRepository, mapper);
-
-                CurvePointDTO curvePointToUpdate = new CurvePointDTO
-                {
-                    CurvePointId = 1,
-                    CurveId = 3,
-                    AsOfDate = new DateTime(2023, 01, 01),
-                    CreationDate = new DateTime(2023, 01, 01),
-                    Term = 1.5,
-                    Value = 1.5,
-                };
-
-                //Act
-                curvePointService.Update(curvePointToUpdate);
-                CurvePointDTO curvePointsResult = mapper.Map<CurvePointDTO>(context.CurvePoints.FirstOrDefault(x => x.CurvePointId == curvePointToUpdate.CurvePointId));
-                var curvePointToUpdateJson = JsonConvert.SerializeObject(curvePointToUpdate);
-                var curvePointResultJson = JsonConvert.SerializeObject(curvePointsResult);
-
-                //Assert
-                Assert.NotNull(curvePointsResult);
-                Assert.Equal(curvePointToUpdateJson, curvePointResultJson);
-            }
+            //Assert
+            mockRepo.Verify(mock => mock.Update(It.IsAny<CurvePoint>()), Times.Once());
         }
 
         [Fact]
         public void delete()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<CurvePoint> curvePoints = SeedData();
-            contextMock.Setup(x => x.CurvePoints).ReturnsDbSet(curvePoints);
-            contextMock.Setup(m => m.Remove(It.IsAny<CurvePoint>())).Callback<CurvePoint>(b => curvePoints.Remove(b));
             var mapper = mapperCreation();
-            CurvePointRepository curvePointRepository = new CurvePointRepository(contextMock.Object);
-            CurvePointService curvePointService = new CurvePointService(curvePointRepository, mapper);
+            List<CurvePoint> data = SeedData();
+            var mockRepo = MockRepo();
+            mockRepo.Setup(x => x.Delete(It.IsAny<int>()));
+            var service = initService(mockRepo.Object, mapper);
 
             //Act
-            int idToDelete = 1;
-            curvePointService.Delete(idToDelete);
-
-            CurvePoint curvePointResult = contextMock.Object.CurvePoints.FirstOrDefault(x => x.CurvePointId == idToDelete);
-            IEnumerable<CurvePoint> curvePointlist = contextMock.Object.CurvePoints.Where(x => x.CurvePointId > 0);
+            int idToDelete = data[0].CurvePointId;
+            service.Delete(idToDelete);
 
             //Assert
-            Assert.Null(curvePointResult);
-            Assert.NotEmpty(curvePointlist);
-            Assert.Equal(2, curvePointlist.Count());
+            mockRepo.Verify(mock => mock.Delete(It.IsAny<int>()));
         }
     }
 }

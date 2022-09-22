@@ -9,251 +9,142 @@ namespace UnitTests.Repositories
 {
     public class TradeRepositoryTest
     {
-        private List<Trade> SeedData()
+        public List<Trade> SeedData()
         {
-            var trades = new List<Trade>{
-                new Trade
-                {
-                    TradeId = 1,
-                    Account = "account1",
-                    Benchmark = "benchMark1",
-                    Book = "book1",
-                    BuyPrice = 1.0,
-                    BuyQuantity = 1.0,
-                    CreationDate = new DateTime(2022,01,01),
-                    CreationName = "creationName1",
-                    DealName = "dealName1",
-                    DealType = "dealType1",
-                    RevisionDate = new DateTime(2022,01,01),
-                    RevisionName = "revisionName1",
-                    Security =  "security1",
-                    SellPrice = 1.0,
-                    SellQuantity = 1.0,
-                    Side = "side1",
-                    SourceListId = "1",
-                    Status = "status1",
-                    TradeDate = new DateTime(2022,01,01),
-                    Trader = "trader1",
-                    Type = "type1",
-                },
-                new Trade
-                {
-                    TradeId = 2,
-                    Account = "account2",
-                    Benchmark = "benchMark2",
-                    Book = "book2",
-                    BuyPrice = 2.0,
-                    BuyQuantity = 2.0,
-                    CreationDate = new DateTime(2022,02,02),
-                    CreationName = "creationName2",
-                    DealName = "dealName2",
-                    DealType = "dealType2",
-                    RevisionDate = new DateTime(2022,02,02),
-                    RevisionName = "revisionName2",
-                    Security =  "security2",
-                    SellPrice = 2.0,
-                    SellQuantity = 2.0,
-                    Side = "side2",
-                    SourceListId = "2",
-                    Status = "status2",
-                    TradeDate = new DateTime(2022,02,02),
-                    Trader = "trader2",
-                    Type = "type2",
-                },
-                new Trade
-                {
-                    TradeId = 3,
-                    Account = "account3",
-                    Benchmark = "benchMark3",
-                    Book = "book3",
-                    BuyPrice = 3.0,
-                    BuyQuantity = 3.0,
-                    CreationDate = new DateTime(2022,03,03),
-                    CreationName = "creationName3",
-                    DealName = "dealName3",
-                    DealType = "dealType3",
-                    RevisionDate = new DateTime(2022,03,03),
-                    RevisionName = "revisionName3",
-                    Security =  "security3",
-                    SellPrice = 3.0,
-                    SellQuantity = 3.0,
-                    Side = "side3",
-                    SourceListId = "3",
-                    Status = "status3",
-                    TradeDate = new DateTime(2022,03,03),
-                    Trader = "trader3",
-                    Type = "type3",
-                },
-            };
-            return trades;
+            var items = new List<Trade>();
+            Fixture fixture = new Fixture();
+            var item1 = fixture.Create<Trade>();
+            var item2 = fixture.Create<Trade>();
+            var item3 = fixture.Create<Trade>();
+            items.Add(item1);
+            items.Add(item2);
+            items.Add(item3);
+
+            return items;
+        }
+
+        public Mock<PoseidonDBContext> MockContext()
+        {
+            return new Mock<PoseidonDBContext>();
+        }
+
+        public IRepository<Trade> initRepo(Mock<PoseidonDBContext> context)
+        {
+            return new TradeRepository(context.Object);
         }
 
         [Fact]
         public void get()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Trade> trades = SeedData();
-            contextMock.Setup(x => x.Trades).ReturnsDbSet(trades);
-            TradeRepository tradeRepository = new TradeRepository(contextMock.Object);
+            List<Trade> data = SeedData();
+            var context = MockContext();
+            context.Setup(x => x.Trades).ReturnsDbSet(data);
+            IRepository<Trade> repo = initRepo(context);
 
             //Act
-            int id = 1;
-            var tradeResult = JsonConvert.SerializeObject(tradeRepository.Get(id));
-            var trade = JsonConvert.SerializeObject(SeedData().FirstOrDefault(x => x.TradeId == id));
+            int id = data[0].TradeId;
+            var actual = repo.Get(id);
 
             //Assert
-            Assert.NotNull(tradeResult);
-            Assert.Equal(trade, tradeResult);
+            var actualJson = JsonConvert.SerializeObject(actual);
+            var expectedJson = JsonConvert.SerializeObject(data.FirstOrDefault(x => x.TradeId == id));
+            Assert.NotNull(actualJson);
+            Assert.Equal(expectedJson, actualJson);
         }
 
         [Fact]
         public void getAll()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Trade> trades = SeedData();
-            contextMock.Setup(x => x.Trades).ReturnsDbSet(trades);
-            TradeRepository tradeRepository = new TradeRepository(contextMock.Object);
+            List<Trade> data = SeedData();
+            var context = MockContext();
+            context.Setup(x => x.Trades).ReturnsDbSet(data);
+            IRepository<Trade> repo = initRepo(context);
 
             //Act
-            var tradeResult = JsonConvert.SerializeObject(tradeRepository.GetAll());
-            var tradelist = JsonConvert.SerializeObject(contextMock.Object.Trades.Where(b => b.TradeId > 0));
+            var actual = repo.GetAll();
 
             //Assert
-            Assert.NotNull(tradeResult);
-            Assert.NotEmpty(tradeResult);
-            Assert.Equal(tradelist, tradeResult);
+            var actualJson = JsonConvert.SerializeObject(actual);
+            var expectedJson = JsonConvert.SerializeObject(data);
+            Assert.NotNull(actual);
+            Assert.NotEmpty(actual);
+            Assert.Equal(expectedJson, actualJson);
         }
 
-        [Fact]
-        public void save()
+        [Theory, AutoData]
+        public void save(Trade obj)
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Trade> trades = SeedData();
-            contextMock.Setup(x => x.Trades).ReturnsDbSet(trades);
-            contextMock.Setup(m => m.Add(It.IsAny<Trade>())).Callback<Trade>(trades.Add);
-            TradeRepository tradeRepository = new TradeRepository(contextMock.Object);
+            List<Trade> data = SeedData();
+            var context = MockContext();
+            context.Setup(m => m.Add(It.IsAny<Trade>())).Callback<Trade>(data.Add);
+            IRepository<Trade> repo = initRepo(context);
 
             //Act
-            int idToGet = 4;
-            Trade tradeToAdd = new Trade
-            {
-                TradeId = idToGet,
-                Account = "account4",
-                Benchmark = "benchMark4",
-                Book = "book4",
-                BuyPrice = 4.0,
-                BuyQuantity = 4.0,
-                CreationDate = new DateTime(2023, 03, 03),
-                CreationName = "creationName4",
-                DealName = "dealName4",
-                DealType = "dealType4",
-                RevisionDate = new DateTime(2023, 03, 03),
-                RevisionName = "revisionName4",
-                Security = "security4",
-                SellPrice = 4.0,
-                SellQuantity = 4.0,
-                Side = "side4",
-                SourceListId = "4",
-                Status = "status4",
-                TradeDate = new DateTime(2023, 03, 03),
-                Trader = "trader4",
-                Type = "type4",
-            };
-            tradeRepository.Save(tradeToAdd);
-
-            Trade tradeResult = contextMock.Object.Trades.FirstOrDefault(x => x.TradeId == idToGet);
-            IEnumerable<Trade> tradelist = contextMock.Object.Trades.Where(b => b.TradeId > 0);
+            var actual = repo.Save(obj);
 
             //Assert
-            Assert.NotNull(tradeResult);
-            Assert.NotEmpty(tradelist);
-            Assert.Equal(4, tradelist.Count());
-            Assert.Same(tradeToAdd, tradeResult);
+            var actualJson = JsonConvert.SerializeObject(actual);
+            var expectedJson = JsonConvert.SerializeObject(obj);
+            Assert.NotNull(actual);
+            Assert.NotEmpty(data);
+            Assert.Equal(4, data.Count());
+            Assert.Equal(expectedJson, actualJson);
         }
 
-        [Fact]
-        public void update()
+        [Theory, AutoData]
+        public void update(Trade obj)
         {
             //Arrange
-            var options = new DbContextOptionsBuilder<PoseidonDBContext>()
-                .UseInMemoryDatabase("BidRepoUpdate" + Guid.NewGuid().ToString(), new InMemoryDatabaseRoot())
-                .Options;
+            List<Trade> data = SeedData();
+            var context = MockContext();
+            var toUpdate = data[0];
+            var update = obj;
+            update.TradeId = toUpdate.TradeId;
+            context.Setup(m => m.Trades.Update(It.IsAny<Trade>())).Callback(() => {
+                data.Remove(toUpdate);
+                data.Add(update);
+            });
+            IRepository<Trade> repo = initRepo(context);
 
-            using (var context = new PoseidonDBContext(options))
-            {
-                context.Database.EnsureDeleted();
-                context.Database.EnsureCreated();
+            //Act
+            repo.Update(update);
 
-                foreach (var t in SeedData())
-                {
-                    context.Trades.Add(t);
-                }
-                context.SaveChanges();
-            }
+            //Assert
+            var newObj = JsonConvert.SerializeObject(data.FirstOrDefault(x => x.TradeId == update.TradeId));
+            var oldObj = JsonConvert.SerializeObject(toUpdate);
+            var expectedJson = JsonConvert.SerializeObject(update);
 
-            using (var context = new PoseidonDBContext(options))
-            {
-                TradeRepository tradeRepository = new TradeRepository(context);
-
-                Trade tradeToUpdate = new Trade
-                {
-                    TradeId = 1,
-                    Account = "account5",
-                    Benchmark = "benchMark5",
-                    Book = "book5",
-                    BuyPrice = 5.0,
-                    BuyQuantity = 5.0,
-                    CreationDate = new DateTime(2022, 05, 05),
-                    CreationName = "creationName5",
-                    DealName = "dealName5",
-                    DealType = "dealType5",
-                    RevisionDate = new DateTime(2022, 05, 05),
-                    RevisionName = "revisionName5",
-                    Security = "security5",
-                    SellPrice = 5.0,
-                    SellQuantity = 5.0,
-                    Side = "side5",
-                    SourceListId = "5",
-                    Status = "status5",
-                    TradeDate = new DateTime(2022, 05, 05),
-                    Trader = "trader5",
-                    Type = "type5",
-                };
-
-                //Act
-                tradeRepository.Update(tradeToUpdate);
-                Trade tradeResult = context.Trades.FirstOrDefault(x => x.TradeId == tradeToUpdate.TradeId);
-
-                //Assert
-                Assert.NotNull(tradeResult);
-                Assert.Same(tradeToUpdate, tradeResult);
-            }
+            Assert.NotNull(data);
+            Assert.NotEmpty(data);
+            Assert.Equal(3, data.Count());
+            Assert.NotNull(newObj);
+            Assert.Equal(expectedJson, newObj);
+            Assert.NotEqual(oldObj, newObj);
         }
 
         [Fact]
         public void delete()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Trade> trades = SeedData();
-            contextMock.Setup(x => x.Trades).ReturnsDbSet(trades);
-            contextMock.Setup(m => m.Remove(It.IsAny<Trade>())).Callback<Trade>(r => trades.Remove(r));
-            TradeRepository tradeRepository = new TradeRepository(contextMock.Object);
+            List<Trade> data = SeedData();
+            var context = MockContext();
+            var obj = data[0];
+            context.Setup(x => x.Trades).ReturnsDbSet(data);
+            context.Setup(m => m.Remove(It.IsAny<Trade>())).Callback<Trade>(x => data.Remove(obj));
+            IRepository<Trade> repo = initRepo(context);
 
             //Act
-            int idToDelete = 1;
-            tradeRepository.Delete(idToDelete);
-
-            Trade tradeResult = contextMock.Object.Trades.FirstOrDefault(x => x.TradeId == idToDelete);
-            IEnumerable<Trade> tradelist = contextMock.Object.Trades.Where(x => x.TradeId > 0);
+            int id = obj.TradeId;
+            repo.Delete(id);
 
             //Assert
-            Assert.Null(tradeResult);
-            Assert.NotEmpty(tradelist);
-            Assert.Equal(2, tradelist.Count());
+            var deleted = data.FirstOrDefault(x => x.TradeId == id);
+            Assert.Null(deleted);
+            Assert.NotEmpty(data);
+            Assert.Equal(2, data.Count());
         }
     }
 }

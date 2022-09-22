@@ -9,172 +9,142 @@ namespace UnitTests.Repositories
 {
     public class RatingRepositoryTest
     {
-        private List<Rating> SeedData()
+        public List<Rating> SeedData()
         {
-            var ratings = new List<Rating>{
-                new Rating
-                {
-                    RatingId = 1,
-                    FitchRating = "fitchRating1",
-                    MoodysRating = "MoodyRating1",
-                    OrderNumber = 1,
-                    SandPrating = "sandPrating1",
-                },
-                new Rating
-                {
-                    RatingId = 2,
-                    FitchRating = "fitchRating2",
-                    MoodysRating = "MoodyRating2",
-                    OrderNumber = 2,
-                    SandPrating = "sandPrating2",
-                },
-                new Rating
-                {
-                    RatingId = 3,
-                    FitchRating = "fitchRating3",
-                    MoodysRating = "MoodyRating3",
-                    OrderNumber = 3,
-                    SandPrating = "sandPrating3",
-                },
-            };
-            return ratings;
+            var items = new List<Rating>();
+            Fixture fixture = new Fixture();
+            var item1 = fixture.Create<Rating>();
+            var item2 = fixture.Create<Rating>();
+            var item3 = fixture.Create<Rating>();
+            items.Add(item1);
+            items.Add(item2);
+            items.Add(item3);
+
+            return items;
+        }
+
+        public Mock<PoseidonDBContext> MockContext()
+        {
+            return new Mock<PoseidonDBContext>();
+        }
+
+        public IRepository<Rating> initRepo(Mock<PoseidonDBContext> context)
+        {
+            return new RatingRepository(context.Object);
         }
 
         [Fact]
         public void get()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Rating> ratings = SeedData();
-            contextMock.Setup(x => x.Ratings).ReturnsDbSet(ratings);
-            RatingRepository ratingRepository = new RatingRepository(contextMock.Object);
+            List<Rating> data = SeedData();
+            var context = MockContext();
+            context.Setup(x => x.Ratings).ReturnsDbSet(data);
+            IRepository<Rating> repo = initRepo(context);
 
             //Act
-            int id = 1;
-            var ratingResult = JsonConvert.SerializeObject(ratingRepository.Get(id));
-            var rating = JsonConvert.SerializeObject(SeedData().FirstOrDefault(x => x.RatingId == id));
+            int id = data[0].RatingId;
+            var actual = repo.Get(id);
 
             //Assert
-            Assert.NotNull(ratingResult);
-            Assert.Equal(rating, ratingResult);
+            var actualJson = JsonConvert.SerializeObject(actual);
+            var expectedJson = JsonConvert.SerializeObject(data.FirstOrDefault(x => x.RatingId == id));
+            Assert.NotNull(actualJson);
+            Assert.Equal(expectedJson, actualJson);
         }
 
         [Fact]
         public void getAll()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Rating> ratings = SeedData();
-            contextMock.Setup(x => x.Ratings).ReturnsDbSet(ratings);
-            RatingRepository ratingRepository = new RatingRepository(contextMock.Object);
+            List<Rating> data = SeedData();
+            var context = MockContext();
+            context.Setup(x => x.Ratings).ReturnsDbSet(data);
+            IRepository<Rating> repo = initRepo(context);
 
             //Act
-            var ratingResult = JsonConvert.SerializeObject(ratingRepository.GetAll());
-            var ratinglist = JsonConvert.SerializeObject(contextMock.Object.Ratings.Where(b => b.RatingId > 0));
+            var actual = repo.GetAll();
 
             //Assert
-            Assert.NotNull(ratingResult);
-            Assert.NotEmpty(ratingResult);
-            Assert.Equal(ratinglist, ratingResult);
+            var actualJson = JsonConvert.SerializeObject(actual);
+            var expectedJson = JsonConvert.SerializeObject(data);
+            Assert.NotNull(actual);
+            Assert.NotEmpty(actual);
+            Assert.Equal(expectedJson, actualJson);
         }
 
-        [Fact]
-        public void save()
+        [Theory, AutoData]
+        public void save(Rating obj)
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Rating> ratings = SeedData();
-            contextMock.Setup(x => x.Ratings).ReturnsDbSet(ratings);
-            contextMock.Setup(m => m.Add(It.IsAny<Rating>())).Callback<Rating>(ratings.Add);
-            RatingRepository ratingRepository = new RatingRepository(contextMock.Object);
+            List<Rating> data = SeedData();
+            var context = MockContext();
+            context.Setup(m => m.Add(It.IsAny<Rating>())).Callback<Rating>(data.Add);
+            IRepository<Rating> repo = initRepo(context);
 
             //Act
-            int idToGet = 4;
-            Rating ratingToAdd = new Rating
-            {
-                RatingId = idToGet,
-                FitchRating = "fitchRating4",
-                MoodysRating = "MoodyRating4",
-                OrderNumber = 4,
-                SandPrating = "sandPrating4",
-            };
-            ratingRepository.Save(ratingToAdd);
-
-            Rating ratingResult = contextMock.Object.Ratings.FirstOrDefault(x => x.RatingId == idToGet);
-            IEnumerable<Rating> ratinglist = contextMock.Object.Ratings.Where(b => b.RatingId > 0);
+            var actual = repo.Save(obj);
 
             //Assert
-            Assert.NotNull(ratingResult);
-            Assert.NotEmpty(ratinglist);
-            Assert.Equal(4, ratinglist.Count());
-            Assert.Same(ratingToAdd, ratingResult);
+            var actualJson = JsonConvert.SerializeObject(actual);
+            var expectedJson = JsonConvert.SerializeObject(obj);
+            Assert.NotNull(actual);
+            Assert.NotEmpty(data);
+            Assert.Equal(4, data.Count());
+            Assert.Equal(expectedJson, actualJson);
         }
 
-        [Fact]
-        public void update()
+        [Theory, AutoData]
+        public void update(Rating obj)
         {
             //Arrange
-            var options = new DbContextOptionsBuilder<PoseidonDBContext>()
-                .UseInMemoryDatabase("BidRepoUpdate" + Guid.NewGuid().ToString(), new InMemoryDatabaseRoot())
-                .Options;
+            List<Rating> data = SeedData();
+            var context = MockContext();
+            var toUpdate = data[0];
+            var update = obj;
+            update.RatingId = toUpdate.RatingId;
+            context.Setup(m => m.Ratings.Update(It.IsAny<Rating>())).Callback(() => {
+                data.Remove(toUpdate);
+                data.Add(update);
+            });
+            IRepository<Rating> repo = initRepo(context);
 
-            using (var context = new PoseidonDBContext(options))
-            {
-                context.Database.EnsureDeleted();
-                context.Database.EnsureCreated();
+            //Act
+            repo.Update(update);
 
-                foreach (var r in SeedData())
-                {
-                    context.Ratings.Add(r);
-                }
-                context.SaveChanges();
-            }
+            //Assert
+            var newObj = JsonConvert.SerializeObject(data.FirstOrDefault(x => x.RatingId == update.RatingId));
+            var oldObj = JsonConvert.SerializeObject(toUpdate);
+            var expectedJson = JsonConvert.SerializeObject(update);
 
-            using (var context = new PoseidonDBContext(options))
-            {
-                RatingRepository ratingRepository = new RatingRepository(context);
-
-                Rating ratingToUpdate = new Rating
-                {
-                    RatingId = 1,
-                    FitchRating = "fitchRating5",
-                    MoodysRating = "MoodyRatin51",
-                    OrderNumber = 5,
-                    SandPrating = "sandPrating5",
-                };
-
-                //Act
-                ratingRepository.Update(ratingToUpdate);
-                Rating ratingResult = context.Ratings.FirstOrDefault(x => x.RatingId == ratingToUpdate.RatingId);
-
-                //Assert
-                Assert.NotNull(ratingResult);
-                Assert.Same(ratingToUpdate, ratingResult);
-
-            }
+            Assert.NotNull(data);
+            Assert.NotEmpty(data);
+            Assert.Equal(3, data.Count());
+            Assert.NotNull(newObj);
+            Assert.Equal(expectedJson, newObj);
+            Assert.NotEqual(oldObj, newObj);
         }
 
         [Fact]
         public void delete()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Rating> ratings = SeedData();
-            contextMock.Setup(x => x.Ratings).ReturnsDbSet(ratings);
-            contextMock.Setup(m => m.Remove(It.IsAny<Rating>())).Callback<Rating>(r => ratings.Remove(r));
-            RatingRepository ratingRepository = new RatingRepository(contextMock.Object);
+            List<Rating> data = SeedData();
+            var context = MockContext();
+            var obj = data[0];
+            context.Setup(x => x.Ratings).ReturnsDbSet(data);
+            context.Setup(m => m.Remove(It.IsAny<Rating>())).Callback<Rating>(x => data.Remove(obj));
+            IRepository<Rating> repo = initRepo(context);
 
             //Act
-            int idToDelete = 1;
-            ratingRepository.Delete(idToDelete);
-
-            Rating ratingResult = contextMock.Object.Ratings.FirstOrDefault(x => x.RatingId == idToDelete);
-            IEnumerable<Rating> ratinglist = contextMock.Object.Ratings.Where(x => x.RatingId > 0);
+            int id = obj.RatingId;
+            repo.Delete(id);
 
             //Assert
-            Assert.Null(ratingResult);
-            Assert.NotEmpty(ratinglist);
-            Assert.Equal(2, ratinglist.Count());
+            var deleted = data.FirstOrDefault(x => x.RatingId == id);
+            Assert.Null(deleted);
+            Assert.NotEmpty(data);
+            Assert.Equal(2, data.Count());
         }
     }
 }

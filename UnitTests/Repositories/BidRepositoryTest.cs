@@ -9,176 +9,142 @@ namespace UnitTests.Repositories
 {
     public class BidRepositoryTest
     {
+        public List<Bid> SeedData()
+        {
+            var items = new List<Bid>();
+            Fixture fixture = new Fixture();
+            var item1 = fixture.Create<Bid>();
+            var item2 = fixture.Create<Bid>();
+            var item3 = fixture.Create<Bid>();
+            items.Add(item1);
+            items.Add(item2);
+            items.Add(item3);
+
+            return items;
+        }
+
+        public Mock<PoseidonDBContext> MockContext()
+        {
+            return new Mock<PoseidonDBContext>();
+        }
+
+        public IRepository<Bid> initRepo(Mock<PoseidonDBContext> context)
+        {
+            return new BidRepository(context.Object);
+        }
 
         [Fact]
         public void get()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Bid> bids = SeedData();
-            contextMock.Setup(x => x.Bids).ReturnsDbSet(bids);
-            BidRepository bidRepository = new BidRepository(contextMock.Object);
+            List<Bid> data = SeedData();
+            var context = MockContext();
+            context.Setup(x => x.Bids).ReturnsDbSet(data);
+            IRepository<Bid> repo = initRepo(context);
 
             //Act
-            int id = 1;
-            var bidResult = JsonConvert.SerializeObject(bidRepository.Get(id));
-            var bid = JsonConvert.SerializeObject(SeedData().FirstOrDefault(x => x.BidId == id));
+            int id = data[0].BidId;
+            var actual = repo.Get(id);
 
             //Assert
-            Assert.NotNull(bidResult);
-            Assert.Equal(bid, bidResult);
+            var actualJson = JsonConvert.SerializeObject(actual);
+            var expectedJson  = JsonConvert.SerializeObject(data.FirstOrDefault(x => x.BidId == id));
+            Assert.NotNull(actualJson);
+            Assert.Equal(expectedJson, actualJson);
         }
 
         [Fact]
         public void getAll()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Bid> bids = SeedData();
-            contextMock.Setup(x => x.Bids).ReturnsDbSet(bids);
-            BidRepository bidRepository = new BidRepository(contextMock.Object);
+            List<Bid> data = SeedData();
+            var context = MockContext();
+            context.Setup(x => x.Bids).ReturnsDbSet(data);
+            IRepository<Bid> repo = initRepo(context);
 
             //Act
-            var bidsResult = JsonConvert.SerializeObject(bidRepository.GetAll());
-            var bidlist = JsonConvert.SerializeObject(contextMock.Object.Bids.Where(b => b.BidId > 0));
+            var actual = repo.GetAll();
 
             //Assert
-            Assert.NotNull(bidsResult);
-            Assert.NotEmpty(bidsResult);
-            Assert.Equal(bidlist, bidsResult);
+            var actualJson = JsonConvert.SerializeObject(actual);
+            var expectedJson = JsonConvert.SerializeObject(data);
+            Assert.NotNull(actual);
+            Assert.NotEmpty(actual);
+            Assert.Equal(expectedJson, actualJson);
         }
 
-        [Fact]
-        public void save()
+        [Theory, AutoData]
+        public void save(Bid obj)
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Bid> bids = SeedData();
-            contextMock.Setup(x => x.Bids).ReturnsDbSet(bids);
-            contextMock.Setup(m => m.Add(It.IsAny<Bid>())).Callback<Bid>(bids.Add);
-            BidRepository bidRepository = new BidRepository(contextMock.Object);
+            List<Bid> data = SeedData();
+            var context = MockContext();
+            context.Setup(m => m.Add(It.IsAny<Bid>())).Callback<Bid>(data.Add);
+            IRepository<Bid> repo = initRepo(context);
 
             //Act
-            int idToGet = 4;
-            Bid bidToAdd = new Bid
-            {
-                BidId = idToGet,
-                Account = "account4",
-                Type = "type4",
-                BidQuantity = 1.0,
-                AskQuantity = 1.0,
-                BidValue = 1.0,
-                Ask = 1.0,
-                Benchmark = "benchmark4",
-                BidDate = new DateTime(2022,01,01),
-                Commentary = "commentary4",
-                Security = "securoty4",
-                Status = "status4",
-                Trader = "trader4",
-                Book = "book4",
-                CreationName = "creationName4",
-                CreationDate = new DateTime(2022,01,01),
-                RevisionName = "revisionName4",
-                RevisionDate = new DateTime(2022,01,01),
-                DealName = "dealName4",
-                DealType = "dealType4",
-                SourceListId = "SourceListId4",
-                Side = "side4",
-            };
-            bidRepository.Save(bidToAdd);
-
-            Bid bidsResult = contextMock.Object.Bids.FirstOrDefault(x => x.BidId == idToGet);
-            IEnumerable<Bid> bidlist = contextMock.Object.Bids.Where(b => b.BidId > 0);
+            var actual = repo.Save(obj);
 
             //Assert
-            Assert.NotNull(bidsResult);
-            Assert.NotEmpty(bidlist);
-            Assert.Equal(4, bidlist.Count());
-            Assert.Same(bidToAdd, bidsResult);
+            var actualJson = JsonConvert.SerializeObject(actual);
+            var expectedJson = JsonConvert.SerializeObject(obj);
+            Assert.NotNull(actual);
+            Assert.NotEmpty(data);
+            Assert.Equal(4, data.Count());
+            Assert.Equal(expectedJson, actualJson);
         }
 
-        [Fact]
-        public void update()
+        [Theory, AutoData]
+        public void update(Bid obj)
         {
             //Arrange
-            var options = new DbContextOptionsBuilder<PoseidonDBContext>()
-                .UseInMemoryDatabase("BidRepoUpdate" + Guid.NewGuid().ToString(), new InMemoryDatabaseRoot())
-                .Options;
+            List<Bid> data = SeedData();
+            var context = MockContext();
+            var toUpdate = data[0];
+            var update = obj;
+            update.BidId = toUpdate.BidId;
+            context.Setup(m => m.Bids.Update(It.IsAny<Bid>())).Callback(() => {
+                data.Remove(toUpdate);
+                data.Add(update);
+            });
+            IRepository<Bid> repo = initRepo(context);
 
-            using (var context = new PoseidonDBContext(options))
-            {
-                context.Database.EnsureDeleted();
-                context.Database.EnsureCreated();
+            //Act
+            repo.Update(update);
 
-                foreach (var b in SeedData())
-                {
-                    context.Bids.Add(b);
-                }
-                context.SaveChanges();
-            }
+            //Assert
+            var newObj = JsonConvert.SerializeObject(data.FirstOrDefault(x => x.BidId == update.BidId));
+            var oldObj = JsonConvert.SerializeObject(toUpdate);
+            var expectedJson = JsonConvert.SerializeObject(update);
 
-            using (var context = new PoseidonDBContext(options))
-            {
-                BidRepository bidRepository = new BidRepository(context);
-
-                Bid bidToUpdate = new Bid
-                {
-                    BidId = 1,
-                    Account = "NEWaccount1",
-                    Type = "NEWtype1",
-                    BidQuantity = 2.0,
-                    AskQuantity = 2.0,
-                    BidValue = 2.0,
-                    Ask = 2.0,
-                    Benchmark = "NEWbenchmark1",
-                    BidDate = new DateTime(2023,01,01),
-                    Commentary = "NEWcommentary1",
-                    Security = "NEWsecuroty1",
-                    Status = "NEWstatus1",
-                    Trader = "NEWtrader1",
-                    Book = "NEWbook1",
-                    CreationName = "NEWcreationName1",
-                    CreationDate = new DateTime(2023,01,01),
-                    RevisionName = "NEWrevisionName1",
-                    RevisionDate = new DateTime(2023,01,01),
-                    DealName = "NEWdealName1",
-                    DealType = "NEWdealType1",
-                    SourceListId = "NEWSourceListId1",
-                    Side = "NEWside1",
-                };
-
-                //Act
-                bidRepository.Update(bidToUpdate);
-                Bid bidsResult = context.Bids.FirstOrDefault(x => x.BidId == bidToUpdate.BidId);
-
-                //Assert
-                Assert.NotNull(bidsResult);
-                Assert.Same(bidToUpdate, bidsResult);
-
-            }
+            Assert.NotNull(data);
+            Assert.NotEmpty(data);
+            Assert.Equal(3, data.Count());
+            Assert.NotNull(newObj);
+            Assert.Equal(expectedJson, newObj);
+            Assert.NotEqual(oldObj, newObj);
         }
 
         [Fact]
         public void delete()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Bid> bids = SeedData();
-            contextMock.Setup(x => x.Bids).ReturnsDbSet(bids);
-            contextMock.Setup(m => m.Remove(It.IsAny<Bid>())).Callback<Bid>(b => bids.Remove(b));
-            BidRepository bidRepository = new BidRepository(contextMock.Object);
+            List<Bid> data = SeedData();
+            var context = MockContext();
+            var obj = data[0];
+            context.Setup(x => x.Bids).ReturnsDbSet(data);
+            context.Setup(m => m.Remove(It.IsAny<Bid>())).Callback<Bid>(x => data.Remove(obj));
+            IRepository<Bid> repo = initRepo(context);
 
             //Act
-            int idToDelete = 1;
-            bidRepository.Delete(idToDelete);
-
-            Bid bidsResult = contextMock.Object.Bids.FirstOrDefault(x => x.BidId == idToDelete);
-            IEnumerable<Bid> bidlist = contextMock.Object.Bids.Where(x => x.BidId > 0);
+            int id = obj.BidId;
+            repo.Delete(id);
 
             //Assert
-            Assert.Null(bidsResult);
-            Assert.NotEmpty(bidlist);
-            Assert.Equal(2, bidlist.Count());
+            var deleted = data.FirstOrDefault(x => x.BidId == id);
+            Assert.Null(deleted);
+            Assert.NotEmpty(data);
+            Assert.Equal(2, data.Count());
         }
     }
 }

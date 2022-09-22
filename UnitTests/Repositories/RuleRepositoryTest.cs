@@ -4,182 +4,142 @@ namespace UnitTests.Repositories
 {
     public class RuleRepositoryTest
     {
-        private List<Rule> SeedData()
+        public List<Rule> SeedData()
         {
-            var rules = new List<Rule>{
-                new Rule
-                {
-                    RuleId = 1,
-                    Description = "description1",
-                    Json = "json1",
-                    Name = "name1",
-                    SqlPart = "sqlPart1",
-                    SqlStr = "sqlStr1",
-                    Template = "template1",
-                },
-                new Rule
-                {
-                    RuleId = 2,
-                    Description = "description2",
-                    Json = "json2",
-                    Name = "name2",
-                    SqlPart = "sqlPart2",
-                    SqlStr = "sqlStr2",
-                    Template = "template2",
-                },
-                new Rule
-                {
-                    RuleId = 3,
-                    Description = "description3",
-                    Json = "json3",
-                    Name = "name3",
-                    SqlPart = "sqlPart3",
-                    SqlStr = "sqlStr3",
-                    Template = "template3",
-                },
-            };
-            return rules;
+            var items = new List<Rule>();
+            Fixture fixture = new Fixture();
+            var item1 = fixture.Create<Rule>();
+            var item2 = fixture.Create<Rule>();
+            var item3 = fixture.Create<Rule>();
+            items.Add(item1);
+            items.Add(item2);
+            items.Add(item3);
+
+            return items;
+        }
+
+        public Mock<PoseidonDBContext> MockContext()
+        {
+            return new Mock<PoseidonDBContext>();
+        }
+
+        public IRepository<Rule> initRepo(Mock<PoseidonDBContext> context)
+        {
+            return new RuleRepository(context.Object);
         }
 
         [Fact]
         public void get()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Rule> rules = SeedData();
-            contextMock.Setup(x => x.Rules).ReturnsDbSet(rules);
-            RuleRepository ruleRepository = new RuleRepository(contextMock.Object);
+            List<Rule> data = SeedData();
+            var context = MockContext();
+            context.Setup(x => x.Rules).ReturnsDbSet(data);
+            IRepository<Rule> repo = initRepo(context);
 
             //Act
-            int id = 1;
-            var ruleResult = JsonConvert.SerializeObject(ruleRepository.Get(id));
-            var rule = JsonConvert.SerializeObject(SeedData().FirstOrDefault(x => x.RuleId == id));
+            int id = data[0].RuleId;
+            var actual = repo.Get(id);
 
             //Assert
-            Assert.NotNull(ruleResult);
-            Assert.Equal(rule, ruleResult);
+            var actualJson = JsonConvert.SerializeObject(actual);
+            var expectedJson = JsonConvert.SerializeObject(data.FirstOrDefault(x => x.RuleId == id));
+            Assert.NotNull(actualJson);
+            Assert.Equal(expectedJson, actualJson);
         }
 
         [Fact]
         public void getAll()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Rule> rules = SeedData();
-            contextMock.Setup(x => x.Rules).ReturnsDbSet(rules);
-            RuleRepository ruleRepository = new RuleRepository(contextMock.Object);
+            List<Rule> data = SeedData();
+            var context = MockContext();
+            context.Setup(x => x.Rules).ReturnsDbSet(data);
+            IRepository<Rule> repo = initRepo(context);
 
             //Act
-            var ruleResult = JsonConvert.SerializeObject(ruleRepository.GetAll());
-            var rulelist = JsonConvert.SerializeObject(contextMock.Object.Rules.Where(b => b.RuleId > 0));
+            var actual = repo.GetAll();
 
             //Assert
-            Assert.NotNull(ruleResult);
-            Assert.NotEmpty(ruleResult);
-            Assert.Equal(rulelist, ruleResult);
+            var actualJson = JsonConvert.SerializeObject(actual);
+            var expectedJson = JsonConvert.SerializeObject(data);
+            Assert.NotNull(actual);
+            Assert.NotEmpty(actual);
+            Assert.Equal(expectedJson, actualJson);
         }
 
-        [Fact]
-        public void save()
+        [Theory, AutoData]
+        public void save(Rule obj)
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Rule> rules = SeedData();
-            contextMock.Setup(x => x.Rules).ReturnsDbSet(rules);
-            contextMock.Setup(m => m.Add(It.IsAny<Rule>())).Callback<Rule>(rules.Add);
-            RuleRepository ruleRepository = new RuleRepository(contextMock.Object);
+            List<Rule> data = SeedData();
+            var context = MockContext();
+            context.Setup(m => m.Add(It.IsAny<Rule>())).Callback<Rule>(data.Add);
+            IRepository<Rule> repo = initRepo(context);
 
             //Act
-            int idToGet = 4;
-            Rule ruleToAdd = new Rule
-            {
-                RuleId = idToGet,
-                Description = "description4",
-                Json = "json4",
-                Name = "name4",
-                SqlPart = "sqlPart4",
-                SqlStr = "sqlStr4",
-                Template = "template4",
-            };
-            ruleRepository.Save(ruleToAdd);
-
-            Rule ruleResult = contextMock.Object.Rules.FirstOrDefault(x => x.RuleId == idToGet);
-            IEnumerable<Rule> rulelist = contextMock.Object.Rules.Where(b => b.RuleId > 0);
+            var actual = repo.Save(obj);
 
             //Assert
-            Assert.NotNull(ruleResult);
-            Assert.NotEmpty(rulelist);
-            Assert.Equal(4, rulelist.Count());
-            Assert.Same(ruleToAdd, ruleResult);
+            var actualJson = JsonConvert.SerializeObject(actual);
+            var expectedJson = JsonConvert.SerializeObject(obj);
+            Assert.NotNull(actual);
+            Assert.NotEmpty(data);
+            Assert.Equal(4, data.Count());
+            Assert.Equal(expectedJson, actualJson);
         }
 
-        [Fact]
-        public void update()
+        [Theory, AutoData]
+        public void update(Rule obj)
         {
             //Arrange
-            var options = new DbContextOptionsBuilder<PoseidonDBContext>()
-                .UseInMemoryDatabase("BidRepoUpdate" + Guid.NewGuid().ToString(), new InMemoryDatabaseRoot())
-                .Options;
+            List<Rule> data = SeedData();
+            var context = MockContext();
+            var toUpdate = data[0];
+            var update = obj;
+            update.RuleId = toUpdate.RuleId;
+            context.Setup(m => m.Rules.Update(It.IsAny<Rule>())).Callback(() => {
+                data.Remove(toUpdate);
+                data.Add(update);
+            });
+            IRepository<Rule> repo = initRepo(context);
 
-            using (var context = new PoseidonDBContext(options))
-            {
-                context.Database.EnsureDeleted();
-                context.Database.EnsureCreated();
+            //Act
+            repo.Update(update);
 
-                foreach (var r in SeedData())
-                {
-                    context.Rules.Add(r);
-                }
-                context.SaveChanges();
-            }
+            //Assert
+            var newObj = JsonConvert.SerializeObject(data.FirstOrDefault(x => x.RuleId == update.RuleId));
+            var oldObj = JsonConvert.SerializeObject(toUpdate);
+            var expectedJson = JsonConvert.SerializeObject(update);
 
-            using (var context = new PoseidonDBContext(options))
-            {
-                RuleRepository rulesRepository = new RuleRepository(context);
-
-                Rule ruleToUpdate = new Rule
-                {
-                    RuleId = 1,
-                    Description = "description5",
-                    Json = "json5",
-                    Name = "name5",
-                    SqlPart = "sqlPart5",
-                    SqlStr = "sqlStr5",
-                    Template = "template5",
-                };
-
-                //Act
-                rulesRepository.Update(ruleToUpdate);
-                Rule ruleResult = context.Rules.FirstOrDefault(x => x.RuleId == ruleToUpdate.RuleId);
-
-                //Assert
-                Assert.NotNull(ruleResult);
-                Assert.Same(ruleToUpdate, ruleResult);
-
-            }
+            Assert.NotNull(data);
+            Assert.NotEmpty(data);
+            Assert.Equal(3, data.Count());
+            Assert.NotNull(newObj);
+            Assert.Equal(expectedJson, newObj);
+            Assert.NotEqual(oldObj, newObj);
         }
 
         [Fact]
         public void delete()
         {
             //Arrange
-            var contextMock = new Mock<PoseidonDBContext>();
-            List<Rule> rules = SeedData();
-            contextMock.Setup(x => x.Rules).ReturnsDbSet(rules);
-            contextMock.Setup(m => m.Remove(It.IsAny<Rule>())).Callback<Rule>(r => rules.Remove(r));
-            RuleRepository ruleRepository = new RuleRepository(contextMock.Object);
+            List<Rule> data = SeedData();
+            var context = MockContext();
+            var obj = data[0];
+            context.Setup(x => x.Rules).ReturnsDbSet(data);
+            context.Setup(m => m.Remove(It.IsAny<Rule>())).Callback<Rule>(x => data.Remove(obj));
+            IRepository<Rule> repo = initRepo(context);
 
             //Act
-            int idToDelete = 1;
-            ruleRepository.Delete(idToDelete);
-
-            Rule ruleResult = contextMock.Object.Rules.FirstOrDefault(x => x.RuleId == idToDelete);
-            IEnumerable<Rule> rulelist = contextMock.Object.Rules.Where(x => x.RuleId > 0);
+            int id = obj.RuleId;
+            repo.Delete(id);
 
             //Assert
-            Assert.Null(ruleResult);
-            Assert.NotEmpty(rulelist);
-            Assert.Equal(2, rulelist.Count());
+            var deleted = data.FirstOrDefault(x => x.RuleId == id);
+            Assert.Null(deleted);
+            Assert.NotEmpty(data);
+            Assert.Equal(2, data.Count());
         }
     }
 }

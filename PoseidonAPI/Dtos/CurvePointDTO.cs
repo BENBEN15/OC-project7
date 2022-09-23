@@ -4,7 +4,6 @@ namespace PoseidonAPI.Dtos
 {
     public class CurvePointDTO
     {
-        // TODO: Map columns in data table CURVEPOINT with corresponding fields
         public int CurvePointId { get; set; }
         public int CurveId { get; set; }
         public DateTime? AsOfDate { get; set; }

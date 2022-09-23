@@ -4,7 +4,6 @@ namespace PoseidonAPI.Dtos
 {
     public class BidDTO
     {
-        // TODO: Map columns in data table BIDLIST with corresponding fields
         public int BidId { get; set; }
         public string Account { get; set; }
         public string Type { get; set; }

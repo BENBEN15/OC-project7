@@ -2,7 +2,6 @@ namespace PoseidonAPI.Dtos
 {
     public class RuleDTO
     {
-        // TODO: Map columns in data table RULENAME with corresponding fields
         public int RuleId { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }

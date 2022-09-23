@@ -9,6 +9,8 @@ namespace PoseidonAPI.Validators
         {
             RuleFor(bid => bid.Account).NotNull();
             RuleFor(bid => bid.Type).NotNull();
+            //Transform(from: bid => bid.BidQuantity, to: value => double.TryParse(value, out double val) ? (int?)val : null);
+            //RuleFor(bid => bid.BidQuantity).Must(bid => );
         }
     }
 }

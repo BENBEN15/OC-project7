@@ -115,7 +115,6 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Create(CreateUserRequest request)
         {
-            //CreateUserRequest loggerRequest = new CreateUserRequest(request.Username, request.Email, request.Phonenumber, "", "");
             _logger.LogInformation($"User : annonymous, route : POST /users, callback : Create()", DateTime.UtcNow.ToLongTimeString());
 
             var userNameExists = await _userManager.FindByNameAsync(request.Username);
@@ -468,7 +467,6 @@ namespace PoseidonAPI.Controllers
         [ProducesResponseType(typeof(ResponseBase), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(List<ErrorModel>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(List<ResponseBase>), StatusCodes.Status400BadRequest)]
-        //[ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
         {
             _logger.LogInformation($"User : {request.email}, route : POST /users/resetPassword, callback : ResetPassword()", DateTime.UtcNow.ToLongTimeString());
@@ -483,7 +481,7 @@ namespace PoseidonAPI.Controllers
                     if (!resetResult.Succeeded)
                     {
                         var errors = new List<ErrorModel>();
-                        foreach(var error in resetResult.Errors)
+                        foreach (var error in resetResult.Errors)
                         {
                             errors.Add(new ErrorModel
                             {
@@ -492,8 +490,11 @@ namespace PoseidonAPI.Controllers
                             });
                         }
                         return BadRequest(errors);
+                    }
+                    else {
+                        await _userManager.UpdateSecurityStampAsync(user);
+                        return Ok(new ResponseBase(true, 200, "reset_password_success", "Your password has been changed successfully"));
                     } 
-                    else return Ok(new ResponseBase(true, 200, "reset_password_success", "Your password has been changed successfully"));
                 }
                 else return BadRequest(new ResponseBase(false, 400, "email_invalid", "This email is not related to any account"));
             }

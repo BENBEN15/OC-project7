@@ -1,9 +1,8 @@
 global using Xunit;
 global using System.Security.Claims;
-global using Microsoft.EntityFrameworkCore;
-global using Microsoft.EntityFrameworkCore.Storage;
 global using Microsoft.Extensions.Logging;
 global using Microsoft.AspNetCore.Http;
+global using Microsoft.AspNetCore.Mvc;
 global using PoseidonAPI.Mappings;
 global using PoseidonAPI.Services;
 global using PoseidonAPI.Repositories;
@@ -16,3 +15,4 @@ global using Moq.EntityFrameworkCore;
 global using AutoMapper;
 global using AutoFixture;
 global using AutoFixture.Xunit2;
+global using Newtonsoft.Json;

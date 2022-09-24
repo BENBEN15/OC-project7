@@ -6,9 +6,7 @@ using PoseidonAPI.Repositories;
 using PoseidonAPI.Services;
 using PoseidonAPI.Model;
 using PoseidonAPI.Dtos;
-using PoseidonAPI.Handlers;
 using System.Reflection;
-using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 {
@@ -64,37 +62,7 @@ var builder = WebApplication.CreateBuilder(args);
         //generate the xml docs for swagger
         var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
         options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
-
-        //Add authorisation for swagger
-        options.AddSecurityDefinition("BasicAuthentication", new OpenApiSecurityScheme
-        {
-            In = ParameterLocation.Header,
-            Description = "Please enter your credentials",
-            Name = "Authorization",
-            Type = SecuritySchemeType.Http,
-            Scheme = "basic"
-        });
-
-        //Adding authentication requirements for swagger
-        options.AddSecurityRequirement(new OpenApiSecurityRequirement
-        {
-            {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id="BasicAuthentication"
-                    }
-                },
-                new string[]{}
-            }
-        });
     });
-
-    //TODO fix swagger authentication issue
-    builder.Services.AddAuthentication("BasicAuthentication")
-    .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
 
     builder.Services.AddRazorPages();
 }
@@ -118,7 +86,6 @@ var app = builder.Build();
     app.UseRouting();
     app.UseAuthentication();
     app.UseAuthorization();
-    //app.MapControllers();
     app.UseEndpoints(endpoints =>
     {
         endpoints.MapControllers();

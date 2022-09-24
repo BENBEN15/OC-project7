@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace UnitTests.Services
+﻿namespace UnitTests.Services
 {
     public class BidServiceTest
     {

@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using PoseidonAPI.Contracts.Rating;
+﻿using PoseidonAPI.Contracts.Rating;
 
 namespace UnitTests.Controllers
 {

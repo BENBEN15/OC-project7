@@ -16,7 +16,6 @@ namespace PoseidonAPI.Controllers
         }
 
         [HttpGet]
-        //[ValidateAntiForgeryToken]
         public IActionResult Index(string token)
         {
             if (token != null)
@@ -37,7 +36,6 @@ namespace PoseidonAPI.Controllers
         }
 
         [HttpPost]
-        //[ValidateAntiForgeryToken]
         public async Task<IActionResult> Index(ResetPasswordViewModel model)
         {
             _logger.LogInformation($"User : {model.Email}, route : ResetPassword/Index, callback : Index(ResetPasswordViewModel model)", DateTime.UtcNow.ToLongTimeString());
@@ -50,7 +48,7 @@ namespace PoseidonAPI.Controllers
                     var resetResult = await _userManager.ResetPasswordAsync(user, model.token, model.newPassword);
                     if (resetResult.Succeeded)
                     {
-                        _userManager.UpdateSecurityStampAsync(user);
+                        await _userManager.UpdateSecurityStampAsync(user);
                         return RedirectToAction("Success");
                     }
                     else

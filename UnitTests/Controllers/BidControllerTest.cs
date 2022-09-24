@@ -1,7 +1,4 @@
-﻿using Newtonsoft.Json;
-using Microsoft.AspNetCore.Mvc;
-using PoseidonAPI.Contracts.Bid;
-
+﻿using PoseidonAPI.Contracts.Bid;
 
 namespace UnitTests.Controllers
 {

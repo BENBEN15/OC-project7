@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using PoseidonAPI.Contracts.Trade;
+﻿using PoseidonAPI.Contracts.Trade;
 
 namespace UnitTests.Controllers
 {

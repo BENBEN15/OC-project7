@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace UnitTests.Repositories
+﻿namespace UnitTests.Repositories
 {
     public class RuleRepositoryTest
     {

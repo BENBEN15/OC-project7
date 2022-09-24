@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using PoseidonAPI.Contracts.CurvePoint;
+﻿using PoseidonAPI.Contracts.CurvePoint;
 
 namespace UnitTests.Controllers
 {

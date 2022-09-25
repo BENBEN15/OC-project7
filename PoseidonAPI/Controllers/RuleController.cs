@@ -126,12 +126,12 @@ namespace PoseidonAPI.Controllers
         public IActionResult Add(CreateRuleRequest request)
         {
             _logger.LogInformation($"User : {User.Identity.Name}, route : POST /rules, callback : Add()", DateTime.UtcNow.ToLongTimeString());
-            var ruleDTO = _mapper.Map<RuleDTO>(request);
 
-            RuleDTOValidator validator = new RuleDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(ruleDTO);
+            RuleCreateValidator validator = new RuleCreateValidator();
+            ValidationResult ValidatorResult = validator.Validate(request);
             if (ValidatorResult.IsValid)
             {
+                var ruleDTO = _mapper.Map<RuleDTO>(request);
                 RuleResponse response = _mapper.Map<RuleResponse>(_ruleService.Save(ruleDTO));
 
                 return CreatedAtAction(
@@ -188,14 +188,13 @@ namespace PoseidonAPI.Controllers
         public IActionResult Update(int id, UpsertRuleRequest rule)
         {
             _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /rules/{id}, callback : Update()", DateTime.UtcNow.ToLongTimeString());
-            RuleDTO ruleDTO = _mapper.Map<RuleDTO>(rule);
-            ruleDTO.RuleId = id;
 
-            RuleDTOValidator validator = new RuleDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(ruleDTO);
-
+            RuleUpsertValidator validator = new RuleUpsertValidator();
+            ValidationResult ValidatorResult = validator.Validate(rule);
             if (ValidatorResult.IsValid)
             {
+                RuleDTO ruleDTO = _mapper.Map<RuleDTO>(rule);
+                ruleDTO.RuleId = id;
                 _ruleService.Update(ruleDTO);
                 return Ok();
             }

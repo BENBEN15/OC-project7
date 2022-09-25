@@ -143,12 +143,13 @@ namespace PoseidonAPI.Controllers
         public IActionResult Add(CreateBidRequest request)
         {
             _logger.LogInformation($"User : {User.Identity.Name}, route : POST /bids, callback : Add()", DateTime.UtcNow.ToLongTimeString());
-            var bidDTO = _mapper.Map<BidDTO>(request);
 
-            BidDTOValidator validator = new BidDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(bidDTO);
+            BidCreateValidator validator = new BidCreateValidator();
+            ValidationResult ValidatorResult = validator.Validate(request);
+
             if (ValidatorResult.IsValid)
             {
+                var bidDTO = _mapper.Map<BidDTO>(request);
                 BidResponse response = _mapper.Map<BidResponse>(_bidService.Save(bidDTO));
 
                 return CreatedAtAction(
@@ -220,14 +221,14 @@ namespace PoseidonAPI.Controllers
         public IActionResult Update(int id, UpsertBidRequest bid)
         {
             _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /bids/{id}, callback : Update()", DateTime.UtcNow.ToLongTimeString());
-            BidDTO bidDTO = _mapper.Map<BidDTO>(bid);
-            bidDTO.BidId = id;
 
-            BidDTOValidator validator = new BidDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(bidDTO);
+            BidUpsertValidator validator = new BidUpsertValidator();
+            ValidationResult ValidatorResult = validator.Validate(bid);
 
             if (ValidatorResult.IsValid)
             {
+                BidDTO bidDTO = _mapper.Map<BidDTO>(bid);
+                bidDTO.BidId = id;
                 _bidService.Update(bidDTO);
                 return Ok();
             }

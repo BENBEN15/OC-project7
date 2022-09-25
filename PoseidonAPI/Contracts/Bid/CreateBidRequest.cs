@@ -3,9 +3,9 @@
     public record CreateBidRequest(
         string Account,
         string Type,
-        double? BidQuantity,
+        double? BidQuantity ,
         double? AskQuantity,
-        double? Bid,
+        double? BidValue,
         double? Ask,
         string Benchmark,
         DateTime? BidDate,

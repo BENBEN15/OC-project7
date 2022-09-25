@@ -125,12 +125,12 @@ namespace PoseidonAPI.Controllers
         public IActionResult Add(CreateCurvePointRequest request)
         {
             _logger.LogInformation($"User : {User.Identity.Name}, route : POST /curvePoints, callback : Add()", DateTime.UtcNow.ToLongTimeString());
-            var curvePointDTO = _mapper.Map<CurvePointDTO>(request);
 
-            CurvePointDTOValidator validator = new CurvePointDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(curvePointDTO);
+            CurvePointCreateValidator validator = new CurvePointCreateValidator();
+            ValidationResult ValidatorResult = validator.Validate(request);
             if (ValidatorResult.IsValid)
             {
+                var curvePointDTO = _mapper.Map<CurvePointDTO>(request);
                 CurvePointResponse response = _mapper.Map<CurvePointResponse>(_curvePointService.Save(curvePointDTO));
 
                 return CreatedAtAction(
@@ -186,14 +186,14 @@ namespace PoseidonAPI.Controllers
         public IActionResult Update(int id, UpsertCurvePointRequest curvePoint)
         {
             _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /curvePoints/{id}, callback : Update()", DateTime.UtcNow.ToLongTimeString());
-            CurvePointDTO curvePointDTO = _mapper.Map<CurvePointDTO>(curvePoint);
-            curvePointDTO.CurvePointId = id;
 
-            CurvePointDTOValidator validator = new CurvePointDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(curvePointDTO);
+            CurvePointUpsertValidator validator = new CurvePointUpsertValidator();
+            ValidationResult ValidatorResult = validator.Validate(curvePoint);
 
             if (ValidatorResult.IsValid)
             {
+                CurvePointDTO curvePointDTO = _mapper.Map<CurvePointDTO>(curvePoint);
+                curvePointDTO.CurvePointId = id;
                 _curvePointService.Update(curvePointDTO);
                 return Ok();
             }

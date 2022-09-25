@@ -124,12 +124,12 @@ namespace PoseidonAPI.Controllers
         public IActionResult Add(CreateRatingRequest request)
         {
             _logger.LogInformation($"User : {User.Identity.Name}, route : POST /ratings, callback : Add()", DateTime.UtcNow.ToLongTimeString());
-            var ratingDTO = _mapper.Map<RatingDTO>(request);
 
-            RatingDTOValidator validator = new RatingDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(ratingDTO);
+            RatingCreateValidator validator = new RatingCreateValidator();
+            ValidationResult ValidatorResult = validator.Validate(request);
             if (ValidatorResult.IsValid)
             {
+                var ratingDTO = _mapper.Map<RatingDTO>(request);
                 RatingResponse response = _mapper.Map<RatingResponse>(_ratingService.Save(ratingDTO));
 
                 return CreatedAtAction(
@@ -184,14 +184,14 @@ namespace PoseidonAPI.Controllers
         public IActionResult Update(int id, UpsertRatingRequest rating)
         {
             _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /ratings/{id}, callback : Update()", DateTime.UtcNow.ToLongTimeString());
-            RatingDTO ratingDTO = _mapper.Map<RatingDTO>(rating);
-            ratingDTO.RatingId = id;
 
-            RatingDTOValidator validator = new RatingDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(ratingDTO);
+            RatingUpsertValidator validator = new RatingUpsertValidator();
+            ValidationResult ValidatorResult = validator.Validate(rating);
 
             if (ValidatorResult.IsValid)
             {
+                RatingDTO ratingDTO = _mapper.Map<RatingDTO>(rating);
+                ratingDTO.RatingId = id;
                 _ratingService.Update(ratingDTO);
                 return Ok();
             }

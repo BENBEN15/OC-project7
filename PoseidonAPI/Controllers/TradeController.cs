@@ -140,12 +140,12 @@ namespace PoseidonAPI.Controllers
         public IActionResult Add(CreateTradeRequest request)
         {
             _logger.LogInformation($"User : {User.Identity.Name}, route : POST /trades, callback : Add()", DateTime.UtcNow.ToLongTimeString());
-            var tradeDTO = _mapper.Map<TradeDTO>(request);
 
-            TradeDTOValidator validator = new TradeDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(tradeDTO);
+            TradeCreateValidator validator = new TradeCreateValidator();
+            ValidationResult ValidatorResult = validator.Validate(request);
             if (ValidatorResult.IsValid)
             {
+                var tradeDTO = _mapper.Map<TradeDTO>(request);
                 TradeResponse response = _mapper.Map<TradeResponse>(_tradeService.Save(tradeDTO));
 
                 return CreatedAtAction(
@@ -216,14 +216,14 @@ namespace PoseidonAPI.Controllers
         public IActionResult Update(int id, UpsertTradeRequest trade)
         {
             _logger.LogInformation($"User : {User.Identity.Name}, route : PUT /trades/{id}, callback : Update()", DateTime.UtcNow.ToLongTimeString());
-            TradeDTO tradeDTO = _mapper.Map<TradeDTO>(trade);
-            tradeDTO.TradeId = id;
 
-            TradeDTOValidator validator = new TradeDTOValidator();
-            ValidationResult ValidatorResult = validator.Validate(tradeDTO);
+            TradeUpsertValidator validator = new TradeUpsertValidator();
+            ValidationResult ValidatorResult = validator.Validate(trade);
 
             if (ValidatorResult.IsValid)
             {
+                TradeDTO tradeDTO = _mapper.Map<TradeDTO>(trade);
+                tradeDTO.TradeId = id;
                 _tradeService.Update(tradeDTO);
                 return Ok();
             }

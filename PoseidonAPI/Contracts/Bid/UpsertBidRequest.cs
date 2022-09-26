@@ -5,7 +5,7 @@
         string Type,
         double? BidQuantity,
         double? AskQuantity,
-        double? Bid,
+        double? BidValue,
         double? Ask,
         string Benchmark,
         DateTime? BidDate,

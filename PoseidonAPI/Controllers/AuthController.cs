@@ -371,7 +371,7 @@ namespace PoseidonAPI.Controllers
         {
             _logger.LogInformation($"User : {User.Identity.Name}, route : GET /users/current, callback : GetMe()", DateTime.UtcNow.ToLongTimeString());
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) {
+            if (user != null) {
                 var result = _mapper.Map<UserResponse>(user);
                 return Ok(result);
             } else
